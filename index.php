@@ -238,6 +238,11 @@ if (isLoggedIn()) {
             width: 0%;
             transition: width 1s ease;
         }
+        .imagen-cuadrada {
+  width: 100%;           /* O el ancho que necesites */
+  aspect-ratio: 1 / 1;   /* Mantiene proporción 1:1 */
+  object-fit: cover;      /* Ajusta la imagen sin aplastarla */
+}
     </style>
     
     <!-- Scripts -->
@@ -941,7 +946,7 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
                                 <img src="assets/img/stock/${producto.id}.png" 
                                      loading="lazy"
                                      onerror="this.src='https://placehold.co/400x400/f3f4f6/a3a3a3?text=${producto.nombre.substring(0,2)}'" 
-                                     class="product-img" alt="${producto.nombre}">
+                                     class="product-img imagen-cuadrada" alt="${producto.nombre}">
                             </div>
                             <div class="product-body">
                                 ${stockBadge}
