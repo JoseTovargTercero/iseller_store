@@ -89,7 +89,7 @@ function renderProducts(products) {
         html += `
             <tr class="animate-fade-in">
                 <td class="ps-3">
-                    <img src="${imgSrc}" class="product-img-thumb" onerror="this.src='../assets/img/no-images.png'">
+                    <img src="${imgSrc}" class="product-img-thumb">
                 </td>
                 <td>
                     <div class="fw-bold text-dark">${p.nombre}</div>
