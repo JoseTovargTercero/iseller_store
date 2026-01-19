@@ -1,0 +1,173 @@
+// admin/assets/js/products.js
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadProducts();
+    setupProductListeners();
+});
+
+let currentProducts = [];
+let uploadModal = null;
+
+function setupProductListeners() {
+    // Search
+    let debounceTimer;
+    document.getElementById('searchProductInput').addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => loadProducts(), 300);
+    });
+
+    // Logout
+    const btnLogout = document.getElementById('btnLogout');
+    if(btnLogout) {
+         btnLogout.addEventListener('click', async () => {
+            await fetch('api/auth.php', { method: 'POST', body: JSON.stringify({ action: 'logout' }) });
+            window.location.href = 'login.php';
+        });
+    }
+
+    // Upload
+    document.getElementById('btnConfirmUpload').addEventListener('click', uploadImage);
+    
+    // Preview Logic
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('previewImage');
+                img.src = e.target.result;
+                img.style.display = 'inline-block';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+async function loadProducts() {
+    const tbody = document.getElementById('products-table-body');
+    const loadingEl = document.getElementById('products-loading');
+    const emptyEl = document.getElementById('products-empty');
+
+    tbody.innerHTML = '';
+    loadingEl.classList.remove('d-none');
+    emptyEl.classList.add('d-none');
+
+    const search = document.getElementById('searchProductInput').value;
+    const url = new URL('api/get_products.php', window.location.href);
+    if (search) url.searchParams.append('search', search);
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        loadingEl.classList.add('d-none');
+
+        if (data.success) {
+            currentProducts = data.products;
+            if (data.products.length === 0) {
+                emptyEl.classList.remove('d-none');
+                return;
+            }
+            renderProducts(data.products);
+        } else {
+            showToast("Error cargando productos", "error");
+        }
+    } catch (e) {
+        loadingEl.classList.add('d-none');
+        showToast("Error de conexión", "error");
+    }
+}
+
+function renderProducts(products) {
+    const tbody = document.getElementById('products-table-body');
+    let html = '';
+    
+    products.forEach(p => {
+        // Construct image path with cache bust
+        const imgSrc = `../assets/img/stock/${p.id}.png?v=${p.img_cache_bust}`;
+        
+        html += `
+            <tr class="animate-fade-in">
+                <td class="ps-3">
+                    <img src="${imgSrc}" class="product-img-thumb" onerror="this.src='../assets/img/no-images.png'">
+                </td>
+                <td>
+                    <div class="fw-bold text-dark">${p.nombre}</div>
+                </td>
+                <td><span class="text-muted small font-monospace">${p.codigo}</span></td>
+                <td class="text-center"><span class="badge bg-primary rounded-pill">${p.stock}</span></td>
+                <td class="text-end">$${parseFloat(p.precio_usd).toFixed(2)}</td>
+                <td class="text-end">${parseFloat(p.precio_bs).toFixed(2)} Bs</td>
+                <td class="text-end pe-3">
+                    <button class="btn btn-light btn-sm text-primary" onclick="openUploadModal(${p.id})" title="Cambiar Foto">
+                        <i class="bi bi-image"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+window.openUploadModal = (id) => {
+    document.getElementById('uploadProductId').value = id;
+    document.getElementById('imageInput').value = ''; // Reset file
+    document.getElementById('previewImage').style.display = 'none';
+    
+    uploadModal = new bootstrap.Modal(document.getElementById('modalUploadImage'));
+    uploadModal.show();
+}
+
+async function uploadImage() {
+    const id = document.getElementById('uploadProductId').value;
+    const fileInput = document.getElementById('imageInput');
+    
+    if (fileInput.files.length === 0) {
+        showToast("Selecciona una imagen", "error");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('id', id);
+    formData.append('image', fileInput.files[0]);
+
+    // Disable button
+    const btn = document.getElementById('btnConfirmUpload');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Subiendo...';
+
+    try {
+        const res = await fetch('api/upload_product_image.php', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            showToast("Imagen actualizada correctamente", "success");
+            uploadModal.hide();
+            loadProducts(); // Reload to see new image
+        } else {
+            showToast(data.message || "Error al subir", "error");
+        }
+    } catch (e) {
+        showToast("Error de conexión", "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+
+function showToast(msg, type = 'info') {
+    Toastify({
+        text: msg,
+        duration: 3000,
+        gravity: "top", 
+        position: "right", 
+        style: {
+            background: type === 'success' ? "green" : (type === 'error' ? "red" : "blue"),
+        }
+    }).showToast();
+}
