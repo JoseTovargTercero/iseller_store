@@ -69,19 +69,47 @@ if (isLoggedIn()) {
 <html lang='es'>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iSeller Store - Tienda Online</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="assets/css/global-styles.css">
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-    
+ <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>iSeller Store | Ecommerce para comprar en línea fácil y seguro</title>
+
+<!-- SEO Básico -->
+<meta name="description" content="iSeller Store es un ecommerce donde puedes comprar productos en línea de forma segura, rápida y confiable. Descubre ofertas y paga fácilmente.">
+<meta name="keywords" content="ecommerce, tienda online, comprar en línea, iseller store, compras online, marketplace">
+<meta name="author" content="iSeller Store">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph -->
+<meta property="og:title" content="iSeller Store | Compra en línea fácil y seguro">
+<meta property="og:description" content="Compra tus productos favoritos en iSeller Store. Ecommerce rápido, seguro y confiable para comprar en línea.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://iseller-tiendas.com/">
+<meta property="og:image" content="https://iseller-tiendas.com/assets/img/og-image.jpg">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="iSeller Store | Compra en línea fácil y seguro">
+<meta name="twitter:description" content="Ecommerce confiable para comprar productos en línea de forma rápida y segura.">
+<meta name="twitter:image" content="https://iseller-tiendas.com/assets/img/og-image.jpg">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/icon.PNG">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/img/icon.PNG">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/img/icon.PNG">
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<!-- Custom Styles -->
+<link rel="stylesheet" href="assets/css/global-styles.css">
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+
     <style>
         /* Rewards Bar Styles */
         .rewards-bar-container {
@@ -357,14 +385,22 @@ if (isLoggedIn()) {
                         </div>
                     </div>
                 </div>
+
+                <!-- Search Toggle Button (Mobile Only) -->
+                <button class="btn-icon d-md-none" id="btn-search-toggle" title="Buscar">
+                    <i class="bi bi-search"></i>
+                </button>
             </div>
         </div>
         
-        <!-- Mobile Search Row (Visible only on small screens) -->
-        <div class="container-fluid d-md-none border-top bg-white py-2 px-3">
+        <!-- Mobile Search Overlay (Animated) -->
+        <div id="mobile-search-overlay" class="mobile-search-overlay d-md-none">
              <div class="header-search-container w-100">
                 <i class="bi bi-search text-muted"></i>
                 <input type="text" class="header-search-input" id="search-mobile" placeholder="Buscar productos..." autocomplete="off">
+                <button class="btn border-0 p-0 ms-2" id="btn-search-close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
              <!-- Mobile Search Results -->
              <div id="search-results-mobile" class="search-results-container"></div>
@@ -380,8 +416,8 @@ if (isLoggedIn()) {
     <section class="hero-section">
         <div class="hero-bg" id="hero-bg"></div>
         <div class="hero-overlay" id="hero-overlay"></div>
-        <div class="hero-content">
-            <h1 class="hero-title text-white" id="hero-text">Compra fácil, rápida y segura</h1>
+        <div class="hero-content py-3">
+            <h1 class="hero-title text-white" id="hero-text"> ¡Compras gratis! Cada 5 niveles obtén $5 para tus compras. </h1>
             <p class="lead mb-4 text-white">Los mejores productos al mejor precio, directo a tu hogar.</p>
             <button class="btn rounded-pill px-4 py-2 text-white shadow-sm" style="background-color: rgb(111, 175, 122); border: none;" data-bs-toggle="modal" data-bs-target="#modalBeneficios">
                 <i class="bi bi-star-fill me-2"></i> Ver Beneficios
@@ -391,15 +427,15 @@ if (isLoggedIn()) {
 
     <!-- Registration CTA -->
     <?php if (!isLoggedIn()): ?>
-    <section class="py-5 border-bottom position-relative" style="background: linear-gradient(180deg, #f8fff9 0%, #ffffff 100%); z-index: 10;">
+    <section class="py-2 border-bottom position-relative" style="background: linear-gradient(180deg, #f8fff9 0%, #ffffff 100%); z-index: 10;">
         <div class="container text-center">
-            <h2 class="fw-bold mb-3" style="color: rgb(111, 175, 122);">¡Empieza con el pie derecho!</h2>
+            <h3 class="fw-bold mb-3" style="color: rgb(111, 175, 122);">¡Empieza con el pie derecho!</h2>
             <p class="lead mb-4 text-muted mx-auto" style="max-width: 700px;">
                 Regístrate ahora y comienza tu camino hacia el ahorro inteligente. 
                 <br>
                 <span>¡Solo con registrarte ya recibirás un <strong style="color: rgb(111, 175, 122); font-size: 1.1em; font-weight: 800;">BONO DE $5</strong> para tus compras!</span>
             </p>
-            <a href="registro.php" class="btn btn-lg rounded-pill px-5 shadow text-white" style="background-color: rgb(111, 175, 122); border: none;">
+            <a href="registro.php" class="btn btn-lg rounded-pill px-5 mb-3 shadow text-white" style="background-color: rgb(111, 175, 122); border: none;">
                 Crear mi cuenta gratis <i class="bi bi-arrow-right ms-2"></i>
             </a>
         </div>
@@ -596,6 +632,45 @@ if (isLoggedIn()) {
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl)
             })
+
+            // --- MOBILE SEARCH OVERLAY LOGIC ---
+            const searchToggle = document.getElementById('btn-search-toggle');
+            const searchOverlay = document.getElementById('mobile-search-overlay');
+            const searchClose = document.getElementById('btn-search-close');
+            const searchInputMobile = document.getElementById('search-mobile');
+
+            if (searchToggle && searchOverlay) {
+                searchToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    searchOverlay.classList.add('active');
+                    setTimeout(() => searchInputMobile.focus(), 100);
+                });
+
+                if (searchClose) {
+                    searchClose.addEventListener('click', () => {
+                        searchOverlay.classList.remove('active');
+                        $('#search-results-mobile').removeClass('show');
+                    });
+                }
+
+                // Close on click outside the overlay content
+                document.addEventListener('click', (e) => {
+                    if (searchOverlay.classList.contains('active') && 
+                        !searchOverlay.contains(e.target) && 
+                        !searchToggle.contains(e.target)) {
+                        searchOverlay.classList.remove('active');
+                        $('#search-results-mobile').removeClass('show');
+                    }
+                });
+
+                // si el scroll se mueve, cerrar el search overlay
+                window.addEventListener('scroll', () => {
+                    if (searchOverlay.classList.contains('active')) {
+                        searchOverlay.classList.remove('active');
+                        $('#search-results-mobile').removeClass('show');
+                    }
+                });
+            }
 
             // --- STICKY PROGRESS OBSERVER ---
             const rewardsBar = document.getElementById('rewards-bar');
@@ -930,10 +1005,7 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
             }
 
             listaProductos.forEach(producto => {
-                 const stockBadge = (producto.mayor === '1') 
-                    ? '<span class="badge-stock" style="background: #ECFDF5; color: #047857;">Mayorista</span>' 
-                    : `<span class="badge-stock">Stock: ${producto.stock}</span>`;
-                
+               
                 const isOutOfStock = producto.stock <= 0 && producto.mayor !== '1';
                 const opacityClass = isOutOfStock ? 'opacity-50 grayscale' : '';
                 const btnDisabled = isOutOfStock ? 'disabled btn-disabled' : '';
@@ -957,7 +1029,7 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
                             card += `
                                      </div>
                             <div class="product-body">
-                                ${stockBadge}
+                      
                                 <h3 class="product-title" title="${producto.nombre}">${producto.nombre}</h3>
                                 
                                 <div class="price-container">

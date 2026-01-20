@@ -441,19 +441,185 @@ h1, h2, h3, h4, h5, h6 {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+.mobile-search-overlay {
+    display: none;
+}
 
 /* Mobile Tweaks */
 @media (max-width: 768px) {
     .hero-section {
-        height: 50vh;
+        height: auto;
+        min-height: 45vh;
+        padding-top: 160px !important; /* Account for tall mobile navbar (approx 146px) */
+        margin-bottom: 0 !important;   /* Avoid overlap with Registration CTA */
     }
     
     .hero-title {
-        font-size: 2rem;
+        font-size: 1.8rem !important;
     }
     
     .products-container {
-        padding-top: 60px;
+        padding-top: 40px !important; /* Adjust since hero margin is gone */
+    }
+
+    /* Search Toggle & Overlay */
+    .mobile-search-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        padding: 0 15px;
+        box-shadow: var(--shadow-md);
+    }
+
+    .mobile-search-overlay.active {
+        display: flex;
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    .mobile-search-overlay .search-results-container {
+        top: 100%;
+        width: 100%;
+        left: 0;
+        border-radius: 0 0 var(--radius-md) var(--radius-md);
+    }
+}
+
+/* Centering for extremely small screens */
+@media (max-width: 400px) {
+    .navbar-custom .container-fluid {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .navbar-brand {
+        margin: 0 !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        width: 100% !important;
+        text-align: center !important;
+    }
+    
+    .header-actions {
+        width: 100% !important;
+        justify-content: center !important;
+        gap: 1.25rem !important;
+        margin: 0 !important;
+    }
+
+    /* Adjust navbar height for hero top padding */
+    .hero-section {
+        padding-top: 140px !important; /* Increased to account for two-row navbar */
+    }
+
+    /* If search overlay is active, keep it full width and absolute */
+    .mobile-search-overlay {
+        flex-direction: row !important;
+        padding: 0 15px !important;
+    }
+}
+
+/* Specific Mobile Layout for Horizontal Product Items */
+@media (max-width: 576px) {
+    .dropdown-menu.custom-dropdown-menu {
+        right: auto !important;
+        transform: translateX(-50%) !important;
+    }
+
+    .product-card {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        padding: 10px;
+    }
+
+    .product-img-wrapper {
+        width: 100px !important;
+        height: 100px !important;
+        padding-top: 0 !important;
+        flex-shrink: 0;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .product-img {
+        position: relative !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+    }
+
+    .product-body {
+        padding: 0 0 0 15px !important;
+        flex-grow: 1;
+        width: calc(100% - 100px);
+        justify-content: center;
+    }
+
+    .product-title {
+        white-space: normal !important;
+        font-size: 0.95rem !important;
+        margin-bottom: 5px !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .price-container {
+        margin-bottom: 0 !important;
+    }
+
+    .price-main {
+        font-size: 1.2rem !important;
+    }
+
+    .price-sub {
+        font-size: 0.75rem !important;
+    }
+
+    .card-actions {
+        width: 100%;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .quantity-control {
+        width: auto;
+        flex-grow: 1;
+        justify-content: space-between;
+    }
+
+    .btn-qty {
+        width: 32px;
+        height: 32px;
+    }
+
+    .qty-input {
+        width: 35px;
+    }
+
+    .btn-add {
+        width: auto;
+        flex-grow: 2;
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.85rem !important;
     }
 }
 
