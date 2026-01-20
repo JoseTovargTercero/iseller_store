@@ -85,13 +85,13 @@ if (isLoggedIn()) {
 <meta property="og:description" content="Compra tus productos favoritos en iSeller Store. Ecommerce rápido, seguro y confiable para comprar en línea.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://iseller-tiendas.com/">
-<meta property="og:image" content="https://iseller-tiendas.com/assets/img/og-image.jpg">
+<meta property="og:image" content="https://iseller-tiendas.com/store/assets/img/og-image.jpg">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="iSeller Store | Compra en línea fácil y seguro">
 <meta name="twitter:description" content="Ecommerce confiable para comprar productos en línea de forma rápida y segura.">
-<meta name="twitter:image" content="https://iseller-tiendas.com/assets/img/og-image.jpg">
+<meta name="twitter:image" content="https://iseller-tiendas.com/store/assets/img/og-image.jpg">
 
 <!-- Favicon -->
 <link rel="icon" type="image/png" sizes="32x32" href="assets/img/icon.PNG">
