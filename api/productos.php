@@ -3,6 +3,45 @@ require_once('../core/db.php');
 require_once('../core/session.php');
 require_once('../core/_tasas_cambio.php');
 require_once('../core/_calculadrora_precios.php');
+// Función para optimizar imágenes y generar WebP
+function optimizeImage($srcPath, $destPath, $maxWidth = 400, $quality = 75) {
+    if (!file_exists($srcPath)) return false;
+
+    $info = getimagesize($srcPath);
+    if (!$info) return false;
+
+    list($width, $height) = $info;
+    $mime = $info['mime'];
+
+    $ratio = $width / $height;
+    $newWidth = $maxWidth;
+    $newHeight = intval($maxWidth / $ratio);
+
+    $image = null;
+    switch ($mime) {
+        case 'image/jpeg': $image = imagecreatefromjpeg($srcPath); break;
+        case 'image/png':  $image = imagecreatefrompng($srcPath); break;
+        case 'image/webp': $image = imagecreatefromwebp($srcPath); break;
+        default: return false;
+    }
+
+    $thumb = imagecreatetruecolor($newWidth, $newHeight);
+
+    if ($mime === 'image/png') {
+        imagealphablending($thumb, false);
+        imagesavealpha($thumb, true);
+    }
+
+    imagecopyresampled($thumb, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+    imagewebp($thumb, $destPath, $quality);
+
+    imagedestroy($image);
+    imagedestroy($thumb);
+
+    return true;
+}
+
 
 header('Content-Type: application/json');
 
@@ -29,9 +68,13 @@ if ($mode === 'search_index') {
     while ($row = $result->fetch_assoc()) {
         $precios = $calculadora->calcularPrecios($row);
         
+        $nombre = mb_strtolower(trim($row['nombre']), 'UTF-8');
+        $nombre = ucfirst($nombre);
+
+        
         $searchIndex[] = [
             'id' => $row['id'],
-            'n' => $row['nombre'], // Short key for 'nombre' to save bandwidth
+            'n' => $nombre, // Short key for 'nombre' to save bandwidth
             'c' => trim($row['codigo_barras']), // 'codigo'
             's' => (int)$row['stock'], // 'stock'
             'm' => $row['mayor'], // 'mayor'
@@ -66,9 +109,26 @@ while ($row = $result->fetch_assoc()) {
     $precios = $calculadora->calcularPrecios($row);
     $valorUnidad = (float) $row['precio_compra'] / (float) $row['cantidad_unidades'];
 
+    $nombre = mb_strtolower(trim($row['nombre']), 'UTF-8');
+    $nombre = ucfirst($nombre);
+
+    $imgPath = "../assets/img/stock/{$row['id']}.png";
+    $optimizedPath = "../assets/img/stock/optimized/{$row['id']}.webp";
+    if (!file_exists($optimizedPath) && file_exists($imgPath)) {
+        optimizeImage($imgPath, $optimizedPath, 400, 75);
+    }
+
+    $img = '';
+    if (file_exists($optimizedPath)) {
+        $img = "assets/img/stock/optimized/{$row['id']}.webp";
+    } elseif (file_exists($imgPath)) {
+        $img = "";
+    }
+
+
     $products[] = [
         'id' => $row['id'],
-        'nombre' => $row['nombre'],
+        'nombre' => $nombre,
         'stock' => (int)$row['stock'],
         'mayor' => $row['mayor'],
         'codigo' => trim($row['codigo_barras']),
@@ -78,7 +138,8 @@ while ($row = $result->fetch_assoc()) {
         'price_C' => $valorUnidad,
         'price_C_Bs' => $valorUnidad * $dolarBolivar,
         'price_C_Cop' => $valorUnidad * $pesoDolar,
-        'cantidadPaca' => $row['cantidad_unidades']
+        'cantidadPaca' => $row['cantidad_unidades'],
+        'img' => $img
     ];
 }
 

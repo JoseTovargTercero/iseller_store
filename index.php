@@ -939,15 +939,23 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
                 const btnDisabled = isOutOfStock ? 'disabled btn-disabled' : '';
                 const btnText = isOutOfStock ? 'Agotado' : 'Agregar';
 
-                const card = `
+                let card = `
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3 product-item">
                         <div class="product-card ${opacityClass}">
-                            <div class="product-img-wrapper">
-                                <img src="assets/img/stock/${producto.id}.png" 
+                            <div class="product-img-wrapper">`;
+
+                            if (producto.img != '') {
+                                card += `<img src="${producto.img}" 
                                      loading="lazy"
-                                     onerror="this.src='https://placehold.co/400x400/f3f4f6/a3a3a3?text=${producto.nombre.substring(0,2)}'" 
-                                     class="product-img imagen-cuadrada" alt="${producto.nombre}">
-                            </div>
+                                     class="product-img imagen-cuadrada" alt="${producto.nombre}">`;
+                            } else {
+                                card += `<img src="https://placehold.co/400x400/f3f4f6/a3a3a3?text=${producto.nombre.substring(0,2)}" 
+                                     loading="lazy"
+                                     class="product-img imagen-cuadrada" alt="${producto.nombre}">`;
+                            }
+                            
+                            card += `
+                                     </div>
                             <div class="product-body">
                                 ${stockBadge}
                                 <h3 class="product-title" title="${producto.nombre}">${producto.nombre}</h3>
