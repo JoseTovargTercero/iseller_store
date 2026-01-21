@@ -371,11 +371,64 @@ if (isLoggedIn()) {
       }
   }
 
-  @keyframes shakeCart {
+    @keyframes shakeCart {
       25% { transform: translateX(6px); }
       50% { transform: translateX(-4px); }
       75% { transform: translateX(2px); }
       100% { transform: translateX(0); }
+  }
+
+  /* Skeleton Loader Styles */
+  .skeleton-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      height: 100%;
+  }
+  .skeleton-img {
+      width: 100%;
+      aspect-ratio: 1/1;
+      background: #f3f4f6;
+  }
+  .skeleton-body {
+      padding: 1.25rem;
+  }
+  .skeleton-text {
+      height: 1rem;
+      background: #f3f4f6;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+  }
+  .skeleton-price {
+      height: 1.5rem;
+      width: 60%;
+      background: #f3f4f6;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+  }
+  .skeleton-button {
+      height: 38px;
+      background: #f3f4f6;
+      border-radius: var(--radius-md);
+  }
+  .shimmer {
+      position: relative;
+      overflow: hidden;
+  }
+  .shimmer::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+      animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
   }
 </style>
     
@@ -570,13 +623,45 @@ if (isLoggedIn()) {
 
     <!-- Product Grid Section -->
     <div class="container-fluid products-container px-3 px-md-5" id="products-container">
+        <!-- Grid Header: Sorting -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <h2 class="fw-bold mb-0" style="color: var(--text-primary);">Nuestros Productos</h2>
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small fw-medium text-nowrap"><i class="bi bi-filter me-1"></i> Ordenar por:</span>
+                <select class="form-select form-select-sm border-0 shadow-sm" id="sort-products" style="border-radius: var(--radius-md); min-width: 160px; height: 38px; cursor: pointer; background-color: white;">
+                    <option value="" selected>Recomendados</option>
+                    <option value="name_asc">Nombre (A-Z)</option>
+                    <option value="name_desc">Nombre (Z-A)</option>
+                </select>
+            </div>
+        </div>
+
         <div class="row g-4" id="products-grid">
             <!-- Products will be loaded here by JavaScript -->
-             <div class="col-12 text-center py-5">
-                 <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Cargando...</span>
-                 </div>
-             </div>
+             <!-- Skeleton placeholders will be shown here initially -->
+             <script>
+                 document.addEventListener('DOMContentLoaded', () => {
+                     const grid = document.getElementById('products-grid');
+                     if (grid && grid.children.length <= 1) { // Only if empty or has sentinel logic
+                         let skeletons = '';
+                         for (let i = 0; i < 24; i++) {
+                             skeletons += `
+                                 <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                     <div class="skeleton-card">
+                                         <div class="skeleton-img shimmer"></div>
+                                         <div class="skeleton-body">
+                                             <div class="skeleton-text shimmer" style="width: 80%;"></div>
+                                             <div class="skeleton-price shimmer"></div>
+                                             <div class="skeleton-button shimmer"></div>
+                                         </div>
+                                     </div>
+                                 </div>
+                             `;
+                         }
+                         grid.innerHTML = skeletons;
+                     }
+                 });
+             </script>
         </div>
     </div>
 
@@ -1145,47 +1230,92 @@ if (isLoggedIn()) {
            // Optional: Navigate to product detail or highlight it
         }
 
-        // Infinite Scroll Logic
+        // Infinite Scroll & Sorting Logic
         let currentPage = 1;
         let isLoading = false;
         let hasMore = true;
+        let currentSort = ''; // Sorting parameter
         const productsGrid = document.getElementById("products-grid");
+
+        // Event listener for sorting dropdown
+        document.getElementById('sort-products').addEventListener('change', function() {
+            currentSort = this.value;
+            currentPage = 1;
+            hasMore = true;
+            
+            // Show skeletons to preserve vertical space and prevent scroll jump
+            showSkeletons();
+            
+            cargarMasProductos();
+        });
+
+        function showSkeletons() {
+            let skeletons = '';
+            for (let i = 0; i < 24; i++) {
+                skeletons += `
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <div class="skeleton-card">
+                            <div class="skeleton-img shimmer"></div>
+                            <div class="skeleton-body">
+                                <div class="skeleton-text shimmer" style="width: 80%;"></div>
+                                <div class="skeleton-price shimmer"></div>
+                                <div class="skeleton-button shimmer"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            productsGrid.innerHTML = skeletons;
+        }
         const sentinel = document.createElement("div"); // Elemento invisible para detectar el final
         sentinel.id = "sentinel";
         document.getElementById("products-container").appendChild(sentinel);
 
-        async function cargarMasProductos() {
+     async function cargarMasProductos() {
             if (isLoading || !hasMore) return;
             isLoading = true;
-            
-            // Mostrar spinner si no existe (opcional, ya hay uno estático al final pero podemos gestionarlo)
-            const spinnerWrapper = document.querySelector('.spinner-border')?.parentElement;
-if (spinnerWrapper) spinnerWrapper.style.display = 'block';
+
+            let loaderShown = false;
+
+            // Programar loader después de 1s
+            const loaderTimer = setTimeout(() => {
+                Notiflix.Loading.standard('Cargando productos...');
+                loaderShown = true;
+            }, 1000);
 
             try {
-                const res = await fetch(`api/productos.php?mode=grid&page=${currentPage}&limit=24`);
+                const res = await fetch(`api/productos.php?mode=grid&page=${currentPage}&limit=24&order=${currentSort}`);
                 const data = await res.json();
-                
+
                 if (data.data && data.data.length > 0) {
                     renderProductos(data.data);
-                    
-                    // Actualizar mapa global para el carrito
+
                     data.data.forEach(p => {
                         productos_por_id[p.id] = p;
                     });
-                    
+
                     currentPage++;
                     hasMore = data.hasMore;
                 } else {
                     hasMore = false;
                 }
+
             } catch (err) {
                 console.error("Error cargando productos", err);
+
             } finally {
+                // Cancelar aparición del loader si aún no salió
+                clearTimeout(loaderTimer);
+
+                // Quitar loader solo si llegó a mostrarse
+                if (loaderShown) {
+                    Notiflix.Loading.remove();
+                }
+
                 isLoading = false;
-                if (!hasMore && spinnerWrapper) spinnerWrapper.style.display = 'none';
             }
         }
+
 
         function renderProductos(listaProductos) {
             // Remove spinner temporarily to append before it, or just append to grid
@@ -1193,9 +1323,9 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
             // Para simplificar, usaremos append al grid y mantendremos el spinner en un contenedor separado o al final.
             // Pero en el HTML original el spinner está DENTRO de products-grid.
             
-            // Limpiar spinner si es la primera carga y está solo
+            // Limpiar skeletons o spinner si es la primera carga
             if(currentPage === 1) {
-                 $("#products-grid .spinner-border").parent().remove();
+                 productsGrid.innerHTML = '';
             }
 
             listaProductos.forEach(producto => {
@@ -1343,6 +1473,10 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
         // Cargar carrito activo desde IndexedDB al iniciar
         (async function cargarCarritoInicial() {
             await checkCartExpiration();
+            
+            // Ensure skeletons are shown while loading initial products
+            showSkeletons();
+            
             const items = await db.carritoActivo.toArray();
             carritoActivo = items.reduce((obj, item) => {
                 obj[item.id] = item;

@@ -57,7 +57,8 @@ if ($mode === 'search_index') {
     $sql = "SELECT p.id, p.nombre, p.codigo_barras, p.precio_compra, p.cantidad_unidades, p.origen, s.stock, s.porcentaje, p.mayor 
             FROM productos p
             INNER JOIN stock s ON p.id = s.id_producto
-            WHERE p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ?  AND p.origen != 'c'";
+            WHERE p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ?  AND p.origen != 'c' AND s.stock > 0 
+            ORDER BY p.nombre ASC";
     
     $stmt = $conexion->prepare($sql);
     $stmt->bind_param("ii", $sucursal, $bss_id);
@@ -90,13 +91,25 @@ if ($mode === 'search_index') {
 // Default mode: Grid Pagination
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 24;
+$sort = $_GET['order'] ?? '';
+switch ($sort) {
+    case 'name_asc':
+        $order = 'p.nombre ASC';
+        break;
+    case 'name_desc':
+        $order = 'p.nombre DESC';
+        break;
+    default:
+        $order = 'p.id ASC';
+        break;
+}
 $offset = ($page - 1) * $limit;
 
 $sql = "SELECT p.*, s.stock, s.porcentaje, s.id_sucursal
         FROM productos p
         INNER JOIN stock s ON p.id = s.id_producto
         WHERE p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ? AND s.stock > 0 AND p.origen != 'c'
-        ORDER BY p.id ASC
+        ORDER BY {$order}
         LIMIT ? OFFSET ?";
 
 $stmt = $conexion->prepare($sql);
