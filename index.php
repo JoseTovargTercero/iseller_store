@@ -67,7 +67,6 @@ if (isLoggedIn()) {
 
 <!DOCTYPE html>
 <html lang='es'>
-
 <head>
  <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -82,7 +81,7 @@ if (isLoggedIn()) {
 
 <!-- Open Graph -->
 <meta property="og:title" content="iSeller Store | Compra en línea fácil y seguro">
-<meta property="og:description" content="Compra tus productos favoritos en iSeller Store. Ecommerce rápido, seguro y confiable para comprar en línea.">
+<meta property="og:description" content="Compra fácil y seguro en iSeller Store. Regístrate y obtén $5 de regalo.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://iseller-tiendas.com/">
 <meta property="og:image" content="https://iseller-tiendas.com/store/assets/img/og-image.jpg">
@@ -223,7 +222,7 @@ if (isLoggedIn()) {
         /* Mobile specific adjustments */
         @media (max-width: 768px) {
             .rewards-bar-container {
-                top: 56px; /* Navbar mobile height approx */
+                top: 0px; /* Navbar mobile height approx */
                 padding: 0 15px;
             }
             .rewards-content {
@@ -271,11 +270,119 @@ if (isLoggedIn()) {
   aspect-ratio: 1 / 1;   /* Mantiene proporción 1:1 */
   object-fit: cover;      /* Ajusta la imagen sin aplastarla */
 }
-    </style>
+  /* Custom Modal Styles */
+  .modal-content {
+      border-radius: 1.25rem;
+      border: none;
+  }
+  .modal-xl-custom {
+      max-width: 1100px;
+  }
+  .list-group-item-action {
+      transition: all 0.2s ease;
+      border-left: 4px solid transparent;
+  }
+  .list-group-item-action:hover {
+      background-color: #f8fafc;
+      border-left-color: var(--primary-color);
+      padding-left: 2rem !important;
+  }
+  .modal-header {
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      padding: 1.5rem;
+  }
+  .modal-footer {
+      border-top: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #94a3b8;
+  }
+  .empty-state i {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+  }
+  
+  .cart-item {
+      transition: transform 0.2s ease;
+  }
+  .cart-item:hover {
+      transform: translateX(5px);
+  }
+
+  .reward-text{
+    gap: 15px;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+
+  /* Cart Flying Animation */
+  .btn-add-to-car {
+      position: relative;
+  }
+  .btn-add-to-car .cart-item-anim {
+      position: absolute;
+      height: 24px;
+      width: 24px;
+      top: -10px;
+      right: -10px;
+      display: none;
+      z-index: 1000;
+  }
+  .btn-add-to-car .cart-item-anim:before {
+      content: '1';
+      display: block;
+      line-height: 24px;
+      height: 24px;
+      width: 24px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #2bd156;
+      color: white;
+      border-radius: 20px;
+      text-align: center;
+  }
+  .btn-add-to-car.sendtocart .cart-item-anim {
+      display: block;
+      animation: xAxis 1s forwards cubic-bezier(1.000, 0.440, 0.840, 0.165);
+  }
+  .btn-add-to-car.sendtocart .cart-item-anim:before {
+      animation: yAxis 1s alternate forwards cubic-bezier(0.165, 0.840, 0.440, 1.000);
+  }
+
+  .btn-cart.shake {
+      animation: shakeCart .4s ease-in-out forwards;
+  }
+
+  @keyframes xAxis {
+      100% {
+          transform: translateX(calc(100vw - 150px)); /* Rough estimate to top-right */
+      }
+  }
+
+  @keyframes yAxis {
+      100% {
+          transform: translateY(calc(-100vh + 100px)); /* Rough estimate to top-right */
+      }
+  }
+
+  @keyframes shakeCart {
+      25% { transform: translateX(6px); }
+      50% { transform: translateX(-4px); }
+      75% { transform: translateX(2px); }
+      100% { transform: translateX(0); }
+  }
+</style>
     
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+
 </head>
 
 
@@ -296,6 +403,7 @@ if (isLoggedIn()) {
                 <span style="color: var(--primary-color);">iSeller</span> <span style="color: var(--text-primary);">Store</span>
             </a>
 
+      
             <!-- Center: Search (Hidden on small mobile) -->
             <div class="d-none d-md-flex flex-grow-1 justify-content-center mx-4">
                 <div class="header-search-container">
@@ -309,16 +417,11 @@ if (isLoggedIn()) {
             <!-- Right: Actions -->
             <div class="header-actions d-flex align-items-center gap-3">
              <?php if (isLoggedIn()): ?>
-                <div class="dropdown reward-dropdown position-relative hide" id="reward-dropdown">
-                    <button class="btn-icon btn-reward" data-bs-toggle="dropdown" title="Tienes recompensas">
+                <div class="reward-container position-relative hide" id="reward-dropdown">
+                    <button class="btn-icon btn-reward" data-bs-toggle="modal" data-bs-target="#modalRecompensas" title="Tienes recompensas">
                         <i class="bi bi-gift-fill"></i>
                         <span class="badge bg-danger rounded-circle badge-reward" id="badge-reward">1</span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end custom-dropdown-menu">
-                        <li><h6 class="dropdown-header">¡Tienes recompensas disponibles!</h6></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><p class="dropdown-item" id="reward-text"></p></li>
-                    </ul>
                 </div>
             <?php endif; ?>
 
@@ -346,44 +449,13 @@ if (isLoggedIn()) {
                     <?php endif; ?>
                 </div>
 
-                <div class="dropdown">
-                    <button class="btn-icon btn-cart position-relative" id="cartDropdown" data-bs-toggle="dropdown">
-                        <i class="bi bi-bag"></i>
+                <div class="cart-container">
+                    <button class="btn-icon btn-cart position-relative" id="cartDropdown" data-bs-toggle="modal" data-bs-target="#modalCarrito">
+                        <i class="bi bi-cart"></i>
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm border border-light" id="cart-count">
                             0
                         </span>
                     </button>
-                    <!-- Cart Dropdown -->
-                    <div class="dropdown-menu dropdown-menu-end custom-dropdown-menu p-0" style="width: 380px; max-width: 90vw;">
-                        <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 fw-bold">Mi Carrito</h6>
-                            <small class="text-muted"><i class="bi bi-bag-check"></i> Items</small>
-                        </div>
-                        <div id="cart-items" class="p-3" style="max-height: 400px; overflow-y: auto;">
-                            <!-- Items inserted via JS -->
-                            <div class="empty-state">
-                                <i class="bi bi-cart-x"></i>
-                                <p>Tu carrito está vacío</p>
-                            </div>
-                        </div>
-                        <div id="cart-footer" class="border-top p-3 bg-white hide">
-                            <div class="d-flex justify-content-between mb-3 align-items-end">
-                                <span class="text-muted">Total:</span>
-                                <div class="text-end line-height-1">
-                                    <div class="fs-4 fw-bold text-success"><span id="cart-total-dolar">$0.00</span></div>
-                                    <div class="small text-muted"><span id="cart-total-bs">Bs 0.00</span></div>
-                                </div>
-                            </div>
-                            <div class="d-grid gap-2">
-                                <a href="checkout.php" class="btn btn-primary">
-                                    Ir a Pagar <i class="bi bi-arrow-right ms-2"></i>
-                                </a>
-                                <button class="btn btn-outline-danger btn-sm" onclick="vaciarCarritoJs()">
-                                    Vaciar Carrito
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Search Toggle Button (Mobile Only) -->
@@ -418,10 +490,14 @@ if (isLoggedIn()) {
         <div class="hero-overlay" id="hero-overlay"></div>
         <div class="hero-content py-3">
             <h1 class="hero-title text-white" id="hero-text"> ¡Compras gratis! Cada 5 niveles obtén $5 para tus compras. </h1>
-            <p class="lead mb-4 text-white">Los mejores productos al mejor precio, directo a tu hogar.</p>
+            <p class="lead mb-4 text-white">Contamos con tienda fisica. <a data-bs-toggle="modal" data-bs-target="#modalUbicacion" class="text-white pointer">Consulta nuestra ubicación</a></p>
+
             <button class="btn rounded-pill px-4 py-2 text-white shadow-sm" style="background-color: rgb(111, 175, 122); border: none;" data-bs-toggle="modal" data-bs-target="#modalBeneficios">
                 <i class="bi bi-star-fill me-2"></i> Ver Beneficios
             </button>
+
+
+
         </div>
     </section>
 
@@ -551,7 +627,7 @@ if (isLoggedIn()) {
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-geo-alt-fill me-2"></i> Nuestra Tienda Física</h5>
+                    <h5 class="modal-title text-white fw-bold"><i class="bi bi-geo-alt-fill me-2"></i> Nuestra Tienda Física</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
@@ -591,6 +667,90 @@ if (isLoggedIn()) {
             </div>
         </div>
     </div>
+    <!-- Modal Recompensas -->
+    <div class="modal fade" id="modalRecompensas" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold text-white"><i class="bi bi-gift-fill me-2"></i> Mis Recompensas</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div id="reward-text" class="fs-5 d-flex flex-column gap-3"></div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cuenta -->
+    <div class="modal fade" id="modalCuenta" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-fill me-2"></i> Mi Cuenta</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-3 border-bottom bg-light">
+                        <h6 class="mb-0 fw-bold"><?php echo htmlspecialchars(getUserName()); ?></h6>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="perfil.php" class="list-group-item list-group-item-action py-3">
+                            <i class="bi bi-person-circle me-3 text-primary"></i> Mi Perfil
+                        </a>
+                        <a href="checkout.php" class="list-group-item list-group-item-action py-3">
+                            <i class="bi bi-cart-check me-3 text-primary"></i> Mi Ordenes / Checkout
+                        </a>
+                        <a href="logout.php" class="list-group-item list-group-item-action py-3 text-danger">
+                            <i class="bi bi-box-arrow-right me-3"></i> Cerrar Sesión
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Carrito -->
+    <div class="modal fade" id="modalCarrito" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-bag-fill me-2"></i> Mi Carrito</h5>
+                    <button type="button" class="btn-close btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="cart-items" class="p-3" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Items inserted via JS -->
+                        <div class="empty-state">
+                            <i class="bi bi-cart-x"></i>
+                            <p>Tu carrito está vacío</p>
+                    </div>
+                    </div>
+                    <div id="cart-footer" class="border-top p-3 bg-light hide">
+                        <div class="d-flex justify-content-between mb-3 align-items-end">
+                            <span class="text-muted">Total:</span>
+                            <div class="text-end line-height-1">
+                                <div class="fs-4 fw-bold text-success"><span id="cart-total-dolar">$0.00</span></div>
+                                <div class="small text-muted"><span id="cart-total-bs">Bs 0.00</span></div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="checkout.php" class="btn btn-primary btn-lg">
+                                Ir a Pagar <i class="bi bi-arrow-right ms-2"></i>
+                            </a>
+                            <button class="btn btn-outline-danger btn-sm border-0" onclick="vaciarCarritoJs()">
+                                Vaciar Carrito
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- jQuery -->
     <script src="assets/js/jquery.min.js"></script>
     <!-- Bootstrap Bundle -->
@@ -605,6 +765,20 @@ if (isLoggedIn()) {
     <script src="assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-aio-3.2.8.min.js"></script>
 
     <script>
+
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const ref = urlParams.get('ref');
+
+        if (ref) {
+            document.cookie = `referral_code=${ref}; path=/; max-age=2592000`;
+            console.log(ref);
+        }
+
+
+
+
+
         var productos = []; // Se cargará dinámicamente
         var productos_por_id = {}; // Se llenará a medida que se haga scroll o busqueda
         var codigos = [];
@@ -664,12 +838,12 @@ if (isLoggedIn()) {
                 });
 
                 // si el scroll se mueve, cerrar el search overlay
-                window.addEventListener('scroll', () => {
+               /* window.addEventListener('scroll', () => {
                     if (searchOverlay.classList.contains('active')) {
                         searchOverlay.classList.remove('active');
                         $('#search-results-mobile').removeClass('show');
                     }
-                });
+                });*/
             }
 
             // --- STICKY PROGRESS OBSERVER ---
@@ -714,7 +888,7 @@ if (isLoggedIn()) {
 
 
 
-                    mapTienda = L.map('map-tienda').setView([lat, lng], 15);
+                    mapTienda = L.map('map-tienda').setView([lat, lng], 17);
 
                     googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
                             maxZoom: 20,
@@ -742,38 +916,56 @@ if (isLoggedIn()) {
                     // Update UI to show rewards available
                     const rewardsContainer = document.querySelector('#reward-dropdown');
                     if(rewardsContainer) {
+                        
                         rewardsContainer.classList.remove('hide');
                         document.querySelector('#badge-reward').innerHTML = data.count;
-                       data.rewards = data.rewards[0];
-
-                          let texto_recompensa_monetaria = `🎉 ¡Felicidades! Has desbloqueado <b>$${data.rewards.monto}</b> por completar nivel <b>${data.rewards.nivel_desbloqueo}</b>`;
-                          let texto_recompensa_descuento = `🎁 ¡Sorpresa! Has conseguido un <b>descuento especial</b> para tu próxima compra`;
-
-                        if(data.rewards.estado === 'bloqueado') {
+                       
                             if(data.init_reward === true) {
                             Notiflix.Report.success(
-                                '¡Recompensa obtenida!',
-                                'Tienes disponible <b>$5</b> que podrás usar a partir del nivel 5.',
+                                '¡Recompensas obtenidas!',
+                                'Tienes disponible <b>$5</b> que podrás usar a partir del nivel 5. Tambien obtuviste un descuento especial para tu próxima compra.',
                                 'Entendido',
                                 () => {
                                     $('#modalBeneficios').modal('show');
                                 }
                             );
                             }
-                            texto_recompensa_monetaria = `🎉 ¡Felicidades! Obtuviste <b>$${data.rewards.monto}</b> por suscribirte, llega al nivel 5 para desbloquearlo.<br>Cada 5 niveles adquiridos, obtendrás <b>$5</b> adicionales.`;
+
+                            let texto_recompensa_monetaria = `<span>🎉 ¡Felicidades! Has desbloqueado <b>$${data.rewards.monto}</b> por completar nivel <b>${data.rewards.nivel_desbloqueo}</b></span>`;
+                            let texto_recompensa_descuento = `<span>🎁 ¡Sorpresa! Has conseguido un <b>descuento especial</b> para tu próxima compra.</span>`;
+
+                           
+                        // recorre las recompensas para mostrarlas en el modal
+                        for (let i = 0; i < data.count; i++) {
+                            const reward = data.rewards[i];
+
+                            let rewardText = '';
+                            console.log(reward)
+
+                            if (reward.tipo === 'referido') {
+                                // Texto especial para referidos
+                                rewardText = `<span>🤝 ¡Buen trabajo! Has recibido <b>Puntos</b> por invitar a un amigo.</span>`;
+                            } else if (reward.tipo === 'monetaria') {
+                                // Texto existente para recompensas monetarias
+                                if (reward.nivel_desbloqueo < 5) {
+                                    rewardText = `<span>🎉 ¡Felicidades! Has obtenido <b>$${reward.monto}</b> por registrarte, podrás usarlo a partir del nivel 5.</span>`;
+                                } else {
+                                    rewardText = `<span>🎉 ¡Felicidades! Has desbloqueado <b>$${reward.monto}</b> por completar nivel <b>${reward.nivel_desbloqueo}</b></span>`;
+                                }
+                            } else {
+                                // Texto existente para otros tipos (descuentos, etc.)
+                                rewardText = `<span>🎁 ¡Sorpresa! Has conseguido un <b>descuento especial</b> para tu próxima compra.</span>`;
+                            }
+
+                            // Agregar el texto al contenedor
+                            document.querySelector('#reward-text').innerHTML += rewardText;
                         }
-
-                      const texto = data.rewards.tipo === 'monetaria' ? texto_recompensa_monetaria :  texto_recompensa_descuento;
-                     
-                      document.querySelector('#reward-text').innerHTML = texto;
-
-
+                        }
                     }
+                } catch(e) {
+                    console.error("Error checking rewards", e);
                 }
-            } catch(e) {
-                console.error("Error checking rewards", e);
             }
-        }
 
         /* buscador de productos */
         let productos_indexados = [];
@@ -823,6 +1015,7 @@ if (isLoggedIn()) {
         // Slider de Texto
         const heroTexts = [
             "¡Compra y gana! Acumula puntos y desbloquea descuentos",
+        "¿Necesitas hacerle el mercado a un familiar? Agrega su dirección y lo llevamos directo a su puerta",
             "Fines de Semana de Ahorro: ofertas exclusivas",
             "Sube de Nivel: gana recompensas en efectivo",
             "Tu mercado en casa o en tienda: delivery confiable"
@@ -936,6 +1129,7 @@ if (isLoggedIn()) {
                                     data-P_P="${item.precio_peso_visible}"
                                     data-P_B="${item.precio_bs_visible}">
                                     <i class="bi bi-plus-lg"></i>
+                                    <span class="cart-item-anim"></span>
                                 </button>
                             </div>
                         </div>
@@ -1009,7 +1203,7 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
                 const isOutOfStock = producto.stock <= 0 && producto.mayor !== '1';
                 const opacityClass = isOutOfStock ? 'opacity-50 grayscale' : '';
                 const btnDisabled = isOutOfStock ? 'disabled btn-disabled' : '';
-                const btnText = isOutOfStock ? 'Agotado' : 'Agregar';
+                const btnText = isOutOfStock ? 'Agotado' : '';
 
                 let card = `
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3 product-item">
@@ -1023,7 +1217,7 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
                             } else {
                                 card += `<img src="https://placehold.co/400x400/f3f4f6/a3a3a3?text=${producto.nombre.substring(0,2)}" 
                                      loading="lazy"
-                                     class="product-img imagen-cuadrada" alt="${producto.nombre}">`;
+                                     class="product-img imagen-cuadrada opacity-50 grayscale" alt="${producto.nombre}">`;
                             }
                             
                             card += `
@@ -1044,13 +1238,14 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
                                             data-cantidad-id="${producto.id}" value="1" min="1" readonly>
                                         <button class="btn-qty" onclick="changeQty(this, 1, ${producto.stock})">+</button>
                                     </div>
-                                    <button class="btn btn-sm btn-add btn-add-to-car ${btnDisabled}" 
+                                    <button style="height: 37px;" class="btn btn-sm btn-add btn-add-to-car ${btnDisabled}" 
                                         data-add-id="${producto.id}"
                                         data-codigo="${producto.codigo || ''}"
                                         data-P_D="${producto.precio_dolar_visible}"
                                         data-P_P="${producto.precio_peso_visible}"
                                         data-P_B="${producto.precio_bs_visible}">
                                         <i class="bi bi-cart-plus"></i> ${btnText}
+                                        <span class="cart-item-anim"></span>
                                     </button>
                                 </div>
                             </div>
@@ -1098,16 +1293,17 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
         }
 
         document.addEventListener('click', function(event) {
-            if (event.target.closest('.btn-add-to-car')) {
-                let id_p = event.target.closest('.btn-add-to-car').getAttribute('data-add-id');
-                let dolarventa_p = event.target.closest('.btn-add-to-car').getAttribute('data-P_D')
-                let pesoventa_p = event.target.closest('.btn-add-to-car').getAttribute('data-P_P')
-                let bolivarventa_p = event.target.closest('.btn-add-to-car').getAttribute('data-P_B')
+            const btn = event.target.closest('.btn-add-to-car');
+            if (btn) {
+                let id_p = btn.getAttribute('data-add-id');
+                let dolarventa_p = btn.getAttribute('data-P_D')
+                let pesoventa_p = btn.getAttribute('data-P_P')
+                let bolivarventa_p = btn.getAttribute('data-P_B')
                 
                 $('#search, #search-mobile').val('')
                 $("#search-results, #search-results-mobile").removeClass('show');
                 
-                addtocarJS(id_p, dolarventa_p, pesoventa_p, bolivarventa_p, null, null);
+                addtocarJS(id_p, dolarventa_p, pesoventa_p, bolivarventa_p, null, null, btn);
             }
         });
 
@@ -1209,18 +1405,17 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
                 Notiflix.Loading.remove();
                 
                 if (data.success) {
-                    return true;
+                    return {'result' : true, 'message' : 'Disponible'};
                 } else {
-                    return false;
+                    return {'result' : false, 'message' : 'No hay stock suficiente'};
                 }
             } catch (e) {
                 Notiflix.Loading.remove();
-                console.error("Error verificando stock", e);
-                return false; // Asumir no disponible si hay error de red para seguridad
+                return {'result' : false, 'message' : 'Problemas de internet, intente nuevamente'}; // Asumir no disponible si hay error de red para seguridad
             }
         }
 
-        async function addtocarJS(id, dolarventa_p, pesoventa_p, bolivarventa_p, mayor, cantidad_scann = null) {
+        async function addtocarJS(id, dolarventa_p, pesoventa_p, bolivarventa_p, mayor, cantidad_scann = null, btnElement = null) {
             const inputCantidad = document.querySelector(`input[data-cantidad-id="${id}"]`);
             // Determine quantity to check (New + Existing in Cart)
             let newQty = inputCantidad ? parseFloat(inputCantidad.value) : 1;
@@ -1236,9 +1431,23 @@ if (spinnerWrapper) spinnerWrapper.style.display = 'block';
 
             const disponible = await verificarStock(id, totalQtyToCheck);
             
-            if (!disponible) {
-                Notiflix.Notify.failure('No hay stock suficiente');
+            if (!disponible['result']) {
+                Notiflix.Notify.failure(disponible['message']);
                 return;
+            }
+
+            if (btnElement) {
+                const $btn = $(btnElement);
+                const $cart = $('#cartDropdown');
+
+                $btn.addClass('sendtocart');
+                setTimeout(function() {
+                    $btn.removeClass('sendtocart');
+                    $cart.addClass('shake');
+                    setTimeout(function() {
+                        $cart.removeClass('shake');
+                    }, 500);
+                }, 1000);
             }
 
             let cant = inputCantidad ? parseFloat(inputCantidad.value) : 1;

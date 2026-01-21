@@ -19,6 +19,11 @@ $costo_envio_dolares = 2;
 $costo_envio_bs = $calculadora->convertirMonto($costo_envio_dolares, 'usd', 'v');
 $costo_envio_bs = $costo_envio_bs['bs'];
 
+// nivel del usuario
+$getUserLevel = getUserLevel();
+$nivelUsuario = $getUserLevel[0];
+$puntosUsuario = $getUserLevel[1];
+
 // Procesar solicitudes POST (API)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -339,10 +344,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtStock->close();
             $stmtUpdStock->close();
             
+            $descuento_porcentaje = $puntosUsuario == '0.00' ? 0.50 : 0.90;
+
             // --- 3.3.1 Aplicar Descuento por Ganancia (si aplica) ---
             if ($tipo_recompensa_usada === 'descuento_ganancia' && $ganancia_total > 0) {
                 // Calcular 90% de la ganancia como descuento
-                $descuento_aplicado = $ganancia_total * 0.90;
+                $descuento_aplicado = $ganancia_total * $descuento_porcentaje;
                 
                 // Actualizar el total a pagar (restar del total que ya incluye envío)
                 $total_pagar_dolares -= $descuento_aplicado;
@@ -608,7 +615,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: #F0FDF4; /* Light green tint */
             border-radius: var(--radius-md); 
             padding: 20px; 
-            border-left: 5px solid var(--primary-color); 
             margin-bottom: 20px; 
         }
         .bank-data-row { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding: 8px 0; }
@@ -630,6 +636,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-color: var(--primary-dark);
             color: white; 
             transform: translateY(-1px);
+        }
+
+        .copy-btn {
+            cursor: pointer;
+            color: var(--primary-color);
+            transition: all 0.2s;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .copy-btn:hover {
+            background-color: rgba(25, 135, 84, 0.1);
+            transform: scale(1.1);
         }
     </style>
     
@@ -842,14 +860,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <section id="seccion-pago" class="mt-4 pt-3 border-top row">
                     <div class="col-lg-6">
                         <h5 class="mb-3 fw-bold">Datos para el Pago</h5>
-                   <div class="bank-info">
-                       <h6 class="fw-bold mb-3 text-success"><i class="bi bi-bank me-2"></i>Transferencia Bancaria / Pago móvil</h6>
-                       <div class="bank-data-row"><span>Propietario:</span> <strong>José Ricardo Romero Tovar</strong></div>
-                       <div class="bank-data-row"><span>Banco:</span> <strong>Banesco (0134)</strong></div>
-                       <div class="bank-data-row"><span>Cédula:</span> <strong>V-27.640.176</strong></div>
-                       <div class="bank-data-row"><span>Teléfono:</span> <strong>0416-0679095</strong></div>
-                       <div class="bank-data-row"><span>Cuenta:</span> <strong class="text-dark">0134-0444-5144-4121-1410</strong></div>
-                   </div>
+                    <div class="bank-info">
+                        <h6 class="fw-bold mb-3 text-success"><i class="bi bi-bank me-2"></i>Transferencia Bancaria / Pago móvil</h6>
+                        <div class="bank-data-row"><span>Propietario:</span> <div class="d-flex m-auto align-items-center gap-2"><strong>José Ricardo Romero Tovar</strong> <i class="bi bi-copy copy-btn" onclick="copyToClipboard('José Ricardo Romero Tovar', 'Propietario')" title="Copiar Propietario"></i></div></div>
+                        <div class="bank-data-row"><span>Banco:</span> <div class="d-flex m-auto align-items-center gap-2"><strong>Banesco (0134)</strong> <i class="bi bi-copy copy-btn" onclick="copyToClipboard('0134', 'Código de Banco')" title="Copiar Banco"></i></div></div>
+                        <div class="bank-data-row"><span>Cédula:</span> <div class="d-flex m-auto align-items-center gap-2"><strong>V-27.640.176</strong> <i class="bi bi-copy copy-btn" onclick="copyToClipboard('27640176', 'Cédula')" title="Copiar Cédula"></i></div></div>
+                        <div class="bank-data-row"><span>Teléfono:</span> <div class="d-flex m-auto align-items-center gap-2"><strong>0416-0679095</strong> <i class="bi bi-copy copy-btn" onclick="copyToClipboard('04160679095', 'Teléfono')" title="Copiar Teléfono"></i></div></div>
+                        <div class="bank-data-row"><span>Cuenta:</span> <div class="d-flex m-auto align-items-center gap-2"><strong class="text-dark">0134-0444-5144-4121-1410</strong> <i class="bi bi-copy copy-btn" onclick="copyToClipboard('01340444514441211410', 'Cuenta')" title="Copiar Cuenta"></i></div></div>
+                    </div>
                     </div>
                    <div class="col-lg-6">
                        <h5 class="mb-3 fw-bold">Reportar Pago</h5>
@@ -864,9 +882,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    </div>
                   </section>
                 <div class="d-flex justify-content-between mt-4 pt-3 border-top">
-                    <button class="btn btn-outline-secondary rounded-pill px-4" onclick="prevStep(1)"><i class="bi bi-arrow-left me-2"></i> Volver</button>
-                    <button class="btn btn-success btn-lg rounded-pill px-5 shadow-sm" id="btn-finish" onclick="finalizarCompra()">
-                        <i class="bi bi-check-lg me-2"></i> Confirmar Pedido
+                    <button class="btn btn-outline-secondary rounded-pill px-4 nowrap" onclick="prevStep(1)"><i class="bi bi-arrow-left me-2"></i> Volver</button>
+                    <button class="btn btn-success btn-lg rounded-pill px-5 shadow-sm nowrap" id="btn-finish" onclick="finalizarCompra()">
+                        <i class="bi bi-check-lg me-2"></i> Confirmar
                     </button>
                 </div>
             </div>
@@ -951,6 +969,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         let deliveryType = 'delivery'; // 'delivery' or 'retiro_tienda'
         let cartItems = [];
         let map, marker;
+        let nivelUsuario = <?php echo $nivelUsuario; ?>;
+        let puntosUsuario = <?php echo $puntosUsuario; ?>;
+
         const db = new Dexie("POS_DB");
         db.version(2).stores({ 
             carritoActivo: 'id',
@@ -1046,14 +1067,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
              // document.getElementById('summary-payment').innerHTML = `Transacción: <strong>${ref}</strong><br>Fecha: ${date}`;
 
             // Cart Totals
-            let subtotalUsd=0, subtotalBs=0, totalCop=0;
+            let subtotalUsd=0, subtotalBs=0, totalCop=0, gananciaUsd = 0, gananciaBs = 0;
             // Calcular subtotal
             cartItems.forEach(item => {
                  subtotalUsd += item.price * item.qty;
                  subtotalBs += item.priceBolivar * item.qty;
                  totalCop += item.pricePeso * item.qty;
+             
+                 gananciaUsd += (item.price - item.price_C) * item.qty;
+                 gananciaBs += (item.priceBolivar - item.price_C_Bs) * item.qty;
             });
-            
+
             // Capture subtotal in Bs before any modification
             const subtotalBsDisplay = subtotalBs;
             
@@ -1084,11 +1108,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 const resRewards = await fetch('api/recompensas_check.php');
                 const dataRewards = await resRewards.json();
-                
+
+                    const descuento_porcentaje = puntosUsuario == '0.00' ? 0.50 : 0.90;
+
+
                 if(dataRewards.success && dataRewards.has_rewards && dataRewards.rewards.length > 0) {
                     const reward = dataRewards.rewards[0]; // Primera recompensa disponible
                     discountType = reward.tipo;
-                    
+
+              
                     if(reward.tipo === 'monetaria') {
                         // Descuento monetario directo
                         discountUsd = Math.min(parseFloat(reward.monto), totalUsd);
@@ -1100,8 +1128,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Calcular ganancia total (aproximado: 90% de la ganancia)
                         // Nota: El cálculo exacto se hace en el backend
                         // Aquí mostramos un estimado para UX
-                        const estimatedProfit = subtotalUsd * 0.15; // Asumiendo ~15% margen promedio
-                        discountUsd = estimatedProfit * 0.90;
+                        const Profit = gananciaUsd; // Asumiendo ~15% margen promedio
+                        discountUsd = Profit * descuento_porcentaje;
                         const bsRatio = totalBs / subtotalUsd;
                         discountBs = discountUsd * bsRatio;
                     }
@@ -1399,7 +1427,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-                    
+
                     document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
                     document.getElementById('step-success').classList.add('active');
                     document.querySelector('.step-indicator').style.display = 'none';
@@ -1488,6 +1516,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
 
+        // --- COPIAR AL PORTAPAPELES ---
+        function copyToClipboard(text, label) {
+            if (!navigator.clipboard) {
+                // Fallback para navegadores antiguos
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    Notiflix.Notify.success(`${label} copiado al portapapeles`);
+                } catch (err) {
+                    Notiflix.Notify.failure('Error al copiar');
+                }
+                document.body.removeChild(textArea);
+                return;
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                Notiflix.Notify.success(`${label} copiado al portapapeles`);
+            }).catch(err => {
+                Notiflix.Notify.failure('Error al copiar: ' + err);
+            });
+        }
     </script>
     <?php endif; ?>
 </body>

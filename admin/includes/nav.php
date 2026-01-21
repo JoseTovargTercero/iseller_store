@@ -7,7 +7,7 @@ require_once 'session.php';
         <a class="navbar-brand fw-bold" href="index.php">
             <i class="bi bi-speedometer2 text-primary"></i> iSeller Admin
         </a>
-        <button class="navbar-toggler" type="button" data-bs-target="#navbarNav">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">

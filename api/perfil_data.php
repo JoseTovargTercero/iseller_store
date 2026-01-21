@@ -14,7 +14,7 @@ $user_id = getUserId();
 try {
     // 1. Información del Usuario
     $stmtUser = $conexion_store->prepare("
-        SELECT id, nombre, email, puntos, nivel, creado_en 
+        SELECT id, nombre, email, puntos, nivel, creado_en, referral_code 
         FROM usuarios 
         WHERE id = ?
     ");
@@ -120,6 +120,8 @@ try {
             'progreso' => round($progreso, 2),
             'porcentaje' => round($porcentaje, 2),
             'falta' => round($falta, 2),
+            'falta' => round($falta, 2),
+            'referral_code' => $userData['referral_code'],
             'created_at' => $userData['creado_en']
         ],
         'addresses' => $addresses,

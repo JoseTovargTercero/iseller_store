@@ -7,8 +7,9 @@
 require_once('core/db.php');
 require_once('core/session.php');
 
-// Si ya está logueado, redirigir a checkout
+// Si ya está logueado, redirigir
 if (isLoggedIn()) {
+    // Nota: Aquí no tenemos el valor de cart_exists del POST, por lo que redirigimos a checkout por defecto o a index
     redirect('checkout.php');
 }
 
@@ -17,6 +18,11 @@ $success = '';
 
 // Procesar formulario de registro
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+    function generateReferralCode($userId) {
+        return strtoupper(substr(md5($userId . uniqid()), 0, 8));
+    }
+
     // Validar token CSRF
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         die('Error de validación CSRF. Por favor, intente de nuevo.');
@@ -27,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password_confirm = $_POST['password_confirm'] ?? '';
     $nombre = trim($_POST['nombre'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
+    $cart_exists = $_POST['cart_exists'] ?? '0';
     
     // Validaciones básicas
     if (empty($email) || empty($password) || empty($nombre) || empty($telefono)) {
@@ -55,9 +62,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("ssss", $nombre, $email, $password_hash, $telefono);
             
             if ($stmt->execute()) {
+              
                 // Obtener el ID del usuario recién creado
                 $user_id = $conexion_store->insert_id;
-                
+                  // Generar código de referido
+                $referral_code = generateReferralCode($user_id);
+                // actualizar usuarios.referral_code 
+                $stmt = $conexion_store->prepare("UPDATE usuarios SET referral_code = ? WHERE id = ?");
+                $stmt->bind_param("ss", $referral_code, $user_id);
+                $stmt->execute();
+
                 // Iniciar sesión automáticamente
                 $user = [
                     'id' => $user_id,
@@ -65,9 +79,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'email' => $email
                 ];
                 loginUser($user);
-                
-                // Redirigir a checkout
-                redirect('checkout.php');
+
+                // Verificar si fue referido
+                $referralCode = $_COOKIE['referral_code'] ?? null;
+
+                if ($referralCode) {
+                    $stmt = $conexion_store->prepare("SELECT id FROM usuarios WHERE referral_code = ? LIMIT 1");
+                    $stmt->bind_param("s", $referralCode);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    if ($result->num_rows > 0) {
+                        $referrer = $result->fetch_assoc();
+                        $referrer_id = $referrer['id'];
+                        // Insertar la referencia
+                        $stmt = $conexion_store->prepare("INSERT INTO referrals (referrer_user_id, referred_user_id, referral_code, status) VALUES (?, ?, ?, 'pending')");
+                        $stmt->bind_param("iii", $referrer_id, $user_id, $referralCode);
+                        $stmt->execute();
+                    }
+
+                    // eliminar cookie
+                    setcookie('referral_code', '', time() - 3600, '/');
+
+                }
+
+
+
+                // Redirigir según el estado del carrito
+                $redirect_page = ($cart_exists === '1') ? 'checkout.php' : 'index.php';
+                redirect($redirect_page);
+
             } else {
                 $error = 'Error al crear la cuenta. Por favor, intente nuevamente.';
             }
@@ -88,6 +128,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Global Styles -->
     <link rel="stylesheet" href="assets/css/global-styles.css">
+    
+    <!-- Dexie.js for IndexedDB -->
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
     
     <style>
         body {
@@ -175,8 +218,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <form method="POST" action="" id="registerForm">
                             <?php echo csrf_field(); ?>
+                            <input type="hidden" name="cart_exists" id="cart_exists" value="0">
                             <div class="mb-3">
-                                <label for="nombre" class="form-label small text-muted fw-bold">NOMBRE COMPLETO</label>
+                                <label for="nombre" class="form-label small text-muted fw-bold">NOMBRE Y APELLIDO</label>
                                 <input type="text" class="form-control bg-light" id="nombre" name="nombre" 
                                        placeholder="Tu nombre completo"
                                        value="<?php echo htmlspecialchars($_POST['nombre'] ?? ''); ?>">
@@ -311,6 +355,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         confirmPassword.addEventListener('input', function() {
             this.classList.remove('is-invalid');
         });
+
+        // Verificación de carrito en IndexedDB
+        const db = new Dexie("POS_DB");
+        db.version(2).stores({
+            carritoActivo: 'id',
+            carritosVenta: 'id',
+            carritosReservados: 'id',
+            cart_meta: 'id'
+        });
+
+        async function checkCartStatus() {
+            try {
+                const count = await db.carritoActivo.count();
+                document.getElementById('cart_exists').value = count > 0 ? '1' : '0';
+                console.log('Cart status checked:', count > 0);
+            } catch (e) {
+                console.error("Error al verificar el carrito:", e);
+            }
+        }
+
+        // Ejecutar al cargar y antes de enviar el formulario
+        document.addEventListener('DOMContentLoaded', checkCartStatus);
+        form.addEventListener('submit', checkCartStatus);
     </script>
 </body>
 </html>

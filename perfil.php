@@ -27,7 +27,7 @@ $userName = getUserName();
         }
         
         .profile-header {
-            background: #6faf7a;
+          background: linear-gradient(135deg, #6fb07f 0%, #5aa773 60%, #4f9e6a 100%);
             color: white;
             padding: 2rem 0;
             margin-bottom: 2rem;
@@ -250,7 +250,7 @@ $userName = getUserName();
         }
         
         .level-badge-large {
-            background: linear-gradient(135deg, rgb(111, 175, 122), #047857);
+            background: linear-gradient(135deg, rgb(0 165 123), #008c6f);
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 99px;
@@ -279,6 +279,37 @@ $userName = getUserName();
         .address-card:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+        
+        /* Utility for backdrop blur */
+        .backdrop-blur {
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+                .referral-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+}
+
+.referral-icon i {
+  font-size: 22px; /* ion-icon o fontawesome */
+}
+.btn-share {
+  background: #22B07D;
+  color: #fff;
+  padding: 10px 18px;
+  transition: .2s ease;
+}
+
+.btn-share:hover {
+  background: #1A9368;
+}
     </style>
 </head>
 
@@ -315,7 +346,7 @@ $userName = getUserName();
     </nav>
 
     <!-- Profile Header -->
-    <div class="profile-header" style="margin-top: 70px;">
+    <div class="profile-header hide" >
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-auto">
@@ -324,7 +355,7 @@ $userName = getUserName();
                     </div>
                 </div>
                 <div class="col">
-                    <h2 class="mb-1 text-white" id="profile-name">
+                    <h2 class="mb-1 text-white">
                         <div class="skeleton" style="width: 200px; height: 32px;"></div>
                     </h2>
                     <p class="mb-2 opacity-75" id="profile-email">
@@ -339,7 +370,49 @@ $userName = getUserName();
     </div>
 
     <!-- Main Content -->
-    <div class="container pb-5">
+    <div class="container pb-5" style="margin-top: 90px;">
+
+   
+        <!-- Referral Banner -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background-image: url('assets/img/bg-referrer.png');">
+            <div class="card-body p-4 text-white position-relative">
+                <div class="row align-items-center position-relative" style="z-index: 2;">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <div class="referral-icon">
+                                <i class="bi bi-gift-fill fs-4"></i>
+                            </div>
+                            <h4 class="mb-0 fw-bold text-white"><span id="profile-name"></span> ¡<b>Gana Puntos</b> por invitar!</h4>
+                        </div>
+                        <p class="mb-3 opacity-90">Comparte tu enlace con amigos. Recibirás 3 puntos cuando realicen su primera compra.</p>
+                        
+                        <div class="bg-white bg-opacity-10 rounded-3 p-3 d-flex flex-wrap gap-3 align-items-center backdrop-blur">
+                            <div class="d-flex align-items-center gap-2 flex-grow-1">
+                                <span class="bg-white text-success fw-bold px-2 py-1 rounded small">TU ENLACE:</span>
+                                <span class="fw-bold font-monospace" id="ref-code-display">Cargando...</span>
+                            </div>
+                            <div class="vr bg-white opacity-25 d-none d-md-block"></div>
+                            <div class="d-flex gap-2 w-100 w-md-auto">
+                                <input type="text" id="ref-link-input" class="form-control form-control-sm bg-white border-0 opacity-75" readonly style="max-width: 0; padding: 0; border: none; height: 0; opacity: 0; position: absolute;">
+                                <button class="btn btn-light btn-sm fw-bold flex-grow-1" id="btn-copy-ref">
+                                    <i class="bi bi-clipboard me-1"></i> Copiar
+                                </button>
+                                <button " class="btn btn-share btn-sm flex-grow-1" id="btn-share-ref">
+                                    <i class="bi bi-share-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center d-none d-md-block">
+                        <i class="bi bi-people-fill" style="font-size: 5rem; opacity: 0.2;"></i>
+                    </div>
+                </div>
+                <!-- Decorative Circles -->
+                <div class="position-absolute top-0 end-0 translate-middle-y me-n5 mt-n5opacity-10 rounded-circle" style="width: 200px; height: 200px; background-color: rgb(255 255 255 / 26%) !important;"></div>
+                <div class="position-absolute bottom-0 start-0 translate-middle-x ms-n4 mb-n4 opacity-10 rounded-circle" style="width: 150px; height: 150px; background-color: rgb(0 0 0 / 22%) !important;"></div>
+            </div>
+        </div>
+
         <!-- Stats Cards -->
         <div class="row g-4 mb-4">
             <div class="col-md-4">
@@ -639,6 +712,45 @@ $userName = getUserName();
                 setTimeout(() => {
                     document.getElementById('loyalty-progress').style.width = data.user.porcentaje + '%';
                 }, 300);
+
+                // Update Referral
+                const refCode = data.user.referral_code;
+                const refLink = `${window.location.origin}/iseller_store/?ref=${refCode}`;
+                
+                document.getElementById('ref-code-display').textContent = refLink;
+                document.getElementById('ref-link-input').value = refLink;
+
+                // Setup Copy Button
+          document.getElementById('btn-copy-ref').onclick = () => {
+
+                const whatsappText = 
+                        `Hola, te recomiendo comprar en iSeller Store 🛒 Por cada compra obtienes descuentos, acumulas puntos y subes de nivel, cada 5 niveles obtienes 5$ para gastar en la tienda: 👉 ${refLink}`;
+
+                            navigator.clipboard.writeText(whatsappText).then(() => {
+                                const btn = document.getElementById('btn-copy-ref');
+                                const originalHtml = btn.innerHTML;
+                                btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+                                btn.classList.replace('btn-outline-primary', 'btn-success');
+
+                                setTimeout(() => {
+                                    btn.innerHTML = originalHtml;
+                                    btn.classList.replace('btn-success', 'btn-outline-primary');
+                                }, 2000);
+                            });
+                        };
+                // Setup Share Button
+                document.getElementById('btn-share-ref').onclick = () => {
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'Únete a iSeller Store',
+                            text: `Hola, te recomiendo comprar en iSeller Store 🛒 Por cada compra obtienes descuentos, acumulas puntos y subes de nivel, cada 5 niveles obtienes 5$ para gastar en la tienda:`,
+                            url: refLink
+                        });
+                    } else {
+                        // Fallback to copy
+                         document.getElementById('btn-copy-ref').click();
+                    }
+                };
                 
                 // Update Rewards
                 renderRewards(data.rewards);
@@ -685,15 +797,37 @@ $userName = getUserName();
 
 
                 
-                const icon = r.tipo === 'monetaria' 
-                    ? '<i class="bi bi-cash-coin text-warning" style="font-size: 2rem;"></i>'
-                    : '<i class="bi bi-percent text-info" style="font-size: 2rem;"></i>';
+                let icon = '';
+                let title = '';
+                let description = '';
+
+                switch (r.tipo) {
+                    case 'monetaria':
+                        icon = '<i class="bi bi-cash-coin text-warning" style="font-size: 2rem;"></i>';
+                        title = `Bono de $${parseFloat(r.monto).toFixed(2)}`;
+                        description = `Desbloqueado al alcanzar Nivel ${r.nivel_desbloqueo}`;
+                        break;
+
+                    case 'descuento_ganancia':
+                        icon = '<i class="bi bi-percent text-info" style="font-size: 2rem;"></i>';
+                        title = `Descuento especial`;
+                        description = `Desbloqueado al alcanzar Nivel ${r.nivel_desbloqueo}`;
+                        break;
+
+                    case 'referido':
+                        icon = '<i class="bi bi-gift-fill text-success" style="font-size: 2rem;"></i>';
+                        title = 'Bono por Referido 🎁';
+                        description = `Recibido al referir a un amigo`;
+                        break;
+
+                    default:
+                        icon = '<i class="bi bi-star-fill text-secondary" style="font-size: 2rem;"></i>';
+                        title = 'Beneficio Especial';
+                        description = `Desbloqueado al alcanzar Nivel ${r.nivel_desbloqueo}`;
+                }
+
+
                 
-                const title = r.tipo === 'monetaria'
-                    ? `Bono de $${parseFloat(r.monto).toFixed(2)}`
-                    : 'Descuento Especial';
-                
-                const description = `Desbloqueado al alcanzar Nivel ${r.nivel_desbloqueo}`;
                 
                 return `
                     <div class="reward-card ${r.estado}">

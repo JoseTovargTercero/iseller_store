@@ -491,7 +491,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Centering for extremely small screens */
-@media (max-width: 400px) {
+@media (max-width: 480px) {
     .navbar-custom .container-fluid {
         flex-direction: column !important;
         gap: 0.5rem !important;
@@ -815,8 +815,6 @@ h1, h2, h3, h4, h5, h6 {
     100% { transform: translateY(100vh) rotate(360deg); }
 }
 
-
-
 /* Checkout */
 .avatar-circle {
     width: 50px;
@@ -835,3 +833,19 @@ h1, h2, h3, h4, h5, h6 {
 .hidden{
     display: none !important;
 }
+  .btn-icon{
+    aspect-ratio: 1;
+}
+
+ @media (max-width: 455px) {
+    .bank-data-row{
+       flex-direction: column;
+       text-align: center;
+    }
+ }
+ .nowrap{
+    white-space: nowrap;
+ }
+ .pointer{
+    cursor: pointer;
+ }
