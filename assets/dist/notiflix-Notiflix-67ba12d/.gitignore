@@ -8,7 +8,7 @@ node_modules/
 /test/coverage
 
 #img
-/assets/img/stock
+/assets/img/stock/optimized
 
 # Misc
 .DS_Store
