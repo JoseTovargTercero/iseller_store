@@ -30,7 +30,7 @@ function cargarDotEnv($ruta)
 	}
 }
 
-cargarDotEnv(dirname(__DIR__) . '/../');
+cargarDotEnv(dirname(__DIR__) . '/../../');
 $usuario = $_ENV['DB_USER'];
 $contrasena = $_ENV['DB_PASS'];
 $baseDeDatos = $_ENV['DB_NAME'];
