@@ -7,6 +7,7 @@ class CalculadoraPrecios
     private float $bolivar_peso;
     private float $bcv;
     private array $data_monedas;
+    private array $recompensas;
 
     public function __construct(
         float $pesoDolar,
@@ -14,7 +15,8 @@ class CalculadoraPrecios
         float $dolarBolivar,
         float $bolivar_peso,
         float $bcv,
-        array $data_monedas
+        array $data_monedas,
+        array $recompensas = []
     ) {
         $this->pesoDolar = $pesoDolar;
         $this->peso_bolivar = $peso_bolivar;
@@ -22,6 +24,7 @@ class CalculadoraPrecios
         $this->bolivar_peso = $bolivar_peso;
         $this->bcv = $bcv;
         $this->data_monedas = $data_monedas;
+        $this->recompensas = $recompensas;
     }
 
     public function calcularPrecios(array $producto): array
@@ -32,6 +35,13 @@ class CalculadoraPrecios
         $porcentaje = (float) $producto["porcentaje"];
         $mayor = $producto["mayor"];
         $cantidad_por_precio = ($mayor == '1' ? 1 : $cantidadUnidad);
+
+        // verifica si $this->recompensas esta vacio
+        if (empty($this->recompensas)) {
+            $recompensas = [];
+        }else{
+            $recompensas = $this->recompensas[0];
+        }
 
         // Precio en dólares por unidad
 
@@ -44,12 +54,14 @@ class CalculadoraPrecios
 
         // Precio en pesos (dólar → pesos)
         $precioPesoVenta = $this->formatPeso($precioDolarVenta * $this->pesoDolar);
-
+        $precioPesoCompra = $this->formatPeso($precioDolarCompra * $this->pesoDolar);
         // Precio en bolívares según el origen
         if ($origen === 'c') {
             $precioBsVenta = ($precioPesoVenta / $this->peso_bolivar) / 1000;
+            $precioBsCompra = ($precioPesoCompra / $this->peso_bolivar) / 1000;
         } else {
             $precioBsVenta = $precioDolarVenta * $this->dolarBolivar;
+            $precioBsCompra = $precioDolarCompra * $this->dolarBolivar;
         }
 
         // Bolívares → pesos
@@ -58,22 +70,45 @@ class CalculadoraPrecios
         // Bolívares → dólares
         $precio_bolivar_dolar = $precioBsVenta / $this->bcv;
 
-        // Determinar precio visible en pesos // precio_peso_visible es el resultado de multiplicar los dolares * la tasa de pesos
-
-        $valorPesos = isset($this->data_monedas['precio_peso_visible']) ||
-            $origen == 'c' ? $precioPesoVenta : $precioBolivarPeso;
-
-
-
-
-
+        
         // Determinar precio visible en dólares
         $precioDolar = isset($this->data_monedas['precio_dolar_visible']) ? $precioDolarVisible : number_format($precio_bolivar_dolar, 2, '.', ',');
 
+
+        // Determinar precio visible en pesos // precio_peso_visible es el resultado de multiplicar los dolares * la tasa de pesos
+
+        $valorPesos = isset($this->data_monedas['precio_peso_visible']) ||
+        $origen == 'c' ? $precioPesoVenta : $precioBolivarPeso;
+
+
+        $precioDolarRecompensa = $precioDolar;
+        $precioBsRecompensa = $precioBsVenta;
+
+        // Aplicar recompensa
+
+        if (!empty($recompensas)) {
+            if ($recompensas && $recompensas['tipo'] === 'descuento_ganancia') {
+                $descuento = $recompensas['porcentaje'];
+
+                $ganancia_dolar = $precioDolar - $precioDolarCompra;
+                $ganancia_bs = $precioBsVenta - $precioBsCompra;
+
+                $precioDolarRecompensa = $precioDolar - ($ganancia_dolar * $descuento);
+                $precioBsRecompensa = $precioBsVenta - ($ganancia_bs * $descuento);
+            }
+        }
+
+
+
+
+        
         return [
+            'recompensa' => $recompensas,
             'precio_venta_dolar' => (float) $precioDolar,
             'precio_venta_bs' => (float) $precioBsVenta,
-            'precio_venta_peso' => (float) $valorPesos
+            'precio_venta_peso' => (float) $valorPesos,
+            'dolar_con_recompensa' => (float) $precioDolarRecompensa,
+            'bs_con_recompensa' => (float) $precioBsRecompensa
         ];
     }
 

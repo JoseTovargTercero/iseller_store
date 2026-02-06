@@ -379,10 +379,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $puntos_actuales = floatval($userData['puntos'] ?? 0);
                 $nivel_actual = intval($userData['nivel'] ?? 1);
                 $stmtUserPoints->close();
-                
+
                 // Calcular puntos generados: mínimo entre ganancia_total y 10
                 $puntos_generados = min($ganancia_total, 10);
-                
+
                 // Calcular nuevos valores acumulados
                 $puntos_nuevos = $puntos_actuales + $puntos_generados;
                 $nivel_nuevo = floor($puntos_nuevos / 10) + 1;
@@ -391,22 +391,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // --- 3.4.1 Registrar Recompensas por Subida de Nivel ---
                 if ($subio_nivel) {
                     $stmtReward = $conexion_store->prepare("
-                        INSERT INTO recompensas_usuario (usuario_id, nivel_desbloqueo, tipo, monto, estado)
-                        VALUES (?, ?, ?, ?, 'disponible')
+                        INSERT INTO recompensas_usuario (usuario_id, nivel_desbloqueo, tipo, monto, porcentaje, estado)
+                        VALUES (?, ?, ?, ?, ?, 'disponible')
                     ");
 
                     // Iterar por cada nivel subido (por si sube más de 1 de golpe)
                     for ($lvl = $nivel_actual + 1; $lvl <= $nivel_nuevo; $lvl++) {
                         $tipo_recompensa = 'descuento_ganancia';
                         $monto_recompensa = 0.00;
+                        $porcentaje_recompensa = 0.90;
 
                         // Regla de negocio: Multiplos de 5 dan recompensa monetaria de $5
                         if ($lvl % 5 == 0) {
                             $tipo_recompensa = 'monetaria';
                             $monto_recompensa = 5.00;
+                            $porcentaje_recompensa = 0.00;
                         }
 
-                        $stmtReward->bind_param("iisd", $user_id, $lvl, $tipo_recompensa, $monto_recompensa);
+                        $stmtReward->bind_param("iisdd", $user_id, $lvl, $tipo_recompensa, $monto_recompensa, $porcentaje_recompensa);
                         
                         if (!$stmtReward->execute()) {
                             throw new Exception("Error registrando recompensa: " . $stmtReward->error);
@@ -557,6 +559,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     <!-- Global Styles -->
     <link rel="stylesheet" href="assets/css/global-styles.css">
+    <!-- Chat System CSS -->
+    <link rel="stylesheet" href="assets/css/chat.css">
     
     <meta name="csrf-token" content="<?php echo getCSRFToken(); ?>">
     
@@ -656,7 +660,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
 
-<body>
+<body data-user-logged-in="<?php echo isLoggedIn() ? 'true' : 'false'; ?>">
     <!-- Navbar (Same as index) -->
     <nav class="navbar navbar-custom fixed-top">
         <div class="container-fluid d-flex align-items-center justify-content-between px-3 px-md-5">
@@ -1128,7 +1132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Calcular ganancia total (aproximado: 90% de la ganancia)
                         // Nota: El cálculo exacto se hace en el backend
                         // Aquí mostramos un estimado para UX
-                        const Profit = gananciaUsd; // Asumiendo ~15% margen promedio
+                        const Profit = gananciaUsd; 
                         discountUsd = Profit * descuento_porcentaje;
                         const bsRatio = totalBs / subtotalUsd;
                         discountBs = discountUsd * bsRatio;
@@ -1541,6 +1545,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
         }
     </script>
+    <?php endif; ?>
+    
+    <!-- Chat Component (Only for logged-in users) -->
+    <?php if (isLoggedIn()): ?>
+        <?php include 'assets/components/chat.html'; ?>
+        <script src="assets/js/chat.js"></script>
     <?php endif; ?>
 </body>
 </html>

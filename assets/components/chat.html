@@ -1,0 +1,142 @@
+<!-- 
+    Componente de Chat Integrado
+    Este archivo debe ser incluido en las páginas principales (index.php, checkout.php, perfil.php)
+-->
+
+<!-- Botón Flotante -->
+<button id="chat-floating-button" class="chat-floating-button" aria-label="Abrir chat">
+    <i class="bi bi-chat-dots-fill"></i>
+    <span id="chat-notification-count" class="chat-notification-badge" style="display: none;">0</span>
+</button>
+
+<!-- Modal de Chat -->
+<div id="chat-modal-overlay" class="chat-modal-overlay">
+    <div class="chat-modal">
+        <!-- Header -->
+        <div class="chat-header ">
+            <div class="chat-header-info">
+                <h3 class="chat-header-title text-white">
+                    <i class="bi bi-shop-window"></i>
+                    <span id="chat-header-title">iSeller Store</span>
+                </h3>
+                <p class="chat-header-subtitle">
+                    <span><i class="bi bi-clock"></i> <span id="chat-horario">Lun-Vie 9:00 AM - 6:00 PM</span></span>
+                    <span><i class="bi bi-lightning-fill"></i> <span id="chat-tiempo-respuesta">~2 horas</span></span>
+                </p>
+            </div>
+            <button id="chat-close-btn" class="chat-close-btn" aria-label="Cerrar chat">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Body con vistas múltiples -->
+        <div class="chat-body">
+            <!-- Vista Inicial -->
+            <div id="chat-start-view" class="chat-view active">
+                <div class="chat-start-view">
+                    <div class="chat-welcome-message">
+                        <h3>¡Hola! 👋</h3>
+                        <p>Bienvenido a nuestro canal de soporte.<br>¿En qué podemos ayudarte hoy?</p>
+                    </div>
+
+                    <button id="chat-new-conversation-btn" class="chat-action-btn">
+                        <div class="chat-action-icon">
+                            <i class="bi bi-plus-circle-fill"></i>
+                        </div>
+                        <div class="chat-action-content">
+                            <h4>Iniciar nueva conversación</h4>
+                            <p>Envíanos tu consulta o solicitud</p>
+                        </div>
+                    </button>
+
+                    <button id="chat-view-conversations-btn" class="chat-action-btn">
+                        <div class="chat-action-icon">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="chat-action-content">
+                            <h4>Ver mis conversaciones</h4>
+                            <p>Consulta el historial de tus chats</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vista Nueva Conversación -->
+            <div id="chat-new-conversation-view" class="chat-view">
+                <div class="chat-new-conversation">
+                    <button class="chat-back-btn">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </button>
+
+                    <form id="chat-new-conversation-form">
+                        <div class="chat-form-group">
+                            <label class="chat-form-label" for="chat-category-select">
+                                Categoría <span style="color: #ef4444;">*</span>
+                            </label>
+                            <select id="chat-category-select" class="chat-form-select" required>
+                                <option value="">Selecciona una categoría...</option>
+                            </select>
+                        </div>
+
+                        <div id="chat-order-group" class="chat-form-group" style="display: none;">
+                            <label class="chat-form-label" for="chat-order-select">
+                                Pedido asociado (opcional)
+                            </label>
+                            <select id="chat-order-select" class="chat-form-select">
+                                <option value="">Sin asociar a pedido</option>
+                            </select>
+                        </div>
+
+                        <div class="chat-form-group">
+                            <label class="chat-form-label" for="chat-subject-input">
+                                Asunto <span style="color: #ef4444;">*</span>
+                            </label>
+                            <input type="text" id="chat-subject-input" class="chat-form-input"
+                                placeholder="Ej: Consulta sobre producto X" required minlength="5" maxlength="200">
+                        </div>
+
+                        <div class="chat-form-group">
+                            <label class="chat-form-label" for="chat-initial-message">
+                                Mensaje <span style="color: #ef4444;">*</span>
+                            </label>
+                            <textarea id="chat-initial-message" class="chat-form-textarea"
+                                placeholder="Describe tu consulta o solicitud..." required minlength="10"
+                                maxlength="5000"></textarea>
+                        </div>
+
+                        <button type="submit" class="chat-submit-btn">
+                            Iniciar Conversación
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Vista Lista de Conversaciones -->
+            <div id="chat-conversations-view" class="chat-view">
+                <button class="chat-back-btn" style="margin: 12px;">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </button>
+                <div id="chat-conversations-container" class="chat-conversations-list">
+                    <!-- Conversaciones se cargan dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Vista Conversación Activa -->
+            <div id="chat-active-view" class="chat-view">
+                <div id="chat-messages" class="chat-messages-container">
+                    <!-- Mensajes se cargan dinámicamente -->
+                </div>
+
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <textarea id="chat-message-input" class="chat-input-field" placeholder="Escribe tu mensaje..."
+                            rows="1"></textarea>
+                        <button id="chat-send-btn" class="chat-send-btn" aria-label="Enviar mensaje">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

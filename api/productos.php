@@ -45,8 +45,46 @@ function optimizeImage($srcPath, $destPath, $maxWidth = 400, $quality = 75) {
 
 header('Content-Type: application/json');
 
+$user_id = getUserId();
+
+
+function recompensas($user_id) {
+    global $conexion_store;
+
+    $recompensa = [];
+
+   
+    $sql = "SELECT porcentaje, monto, tipo FROM recompensas_usuario WHERE usuario_id = ?  AND estado = 'disponible'";
+    $stmt = $conexion_store->prepare($sql);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $porcentaje_descuento = (float) $row['porcentaje'] ?? 0;
+            $tipo_descuento = $row['tipo'] ?? 'porcentaje';
+            $descuento = $tipo_descuento === 'porcentaje' ? $porcentaje_descuento : $row['monto'];
+            $recompensa[] = [
+                'porcentaje' => $porcentaje_descuento,
+                'tipo' => $tipo_descuento,
+                'descuento' => $descuento
+            ];
+        }
+    }
+    return $recompensa;
+}
+
+
+ if (!isLoggedIn()) {
+        $recompensas = [];
+    }else{
+        $recompensas = recompensas($user_id);
+    }
+
+
+
 // Initialize dependencies
-$calculadora = new CalculadoraPrecios($pesoDolar, $peso_bolivar, $dolarBolivar, $bolivar_peso, $bcv, $data_monedas);
+$calculadora = new CalculadoraPrecios($pesoDolar, $peso_bolivar, $dolarBolivar, $bolivar_peso, $bcv, $data_monedas, $recompensas);
 $sucursal = $_SESSION['sucursal'] ?? 9;
 $bss_id = $_SESSION['bss_id'] ?? 3;
 
@@ -72,7 +110,6 @@ if ($mode === 'search_index') {
         $nombre = mb_strtolower(trim($row['nombre']), 'UTF-8');
         $nombre = ucfirst($nombre);
 
-        
         $searchIndex[] = [
             'id' => $row['id'],
             'n' => $nombre, // Short key for 'nombre' to save bandwidth
@@ -81,10 +118,12 @@ if ($mode === 'search_index') {
             'm' => $row['mayor'], // 'mayor'
             'pd' => $precios['precio_venta_dolar'],
             'pp' => $precios['precio_venta_peso'],
-            'pb' => $precios['precio_venta_bs']
+            'pb' => $precios['precio_venta_bs'],
+            'cd' => $precios['dolar_con_recompensa'],
+            'cp' => $precios['bs_con_recompensa']
         ];
     }
-    echo json_encode($searchIndex);
+    echo json_encode(['recompensas' => $recompensas, 'searchIndex' => $searchIndex]);
     exit;
 }
 
@@ -148,9 +187,8 @@ while ($row = $result->fetch_assoc()) {
         'precio_dolar_visible' => $precios['precio_venta_dolar'],
         'precio_peso_visible' => $precios['precio_venta_peso'],
         'precio_bs_visible' => $precios['precio_venta_bs'],
-        'price_C' => $valorUnidad,
-        'price_C_Bs' => $valorUnidad * $dolarBolivar,
-        'price_C_Cop' => $valorUnidad * $pesoDolar,
+        'costo_dolar' => $precios['dolar_con_recompensa'],
+        'costo_bs' => $precios['bs_con_recompensa'],
         'cantidadPaca' => $row['cantidad_unidades'],
         'img' => $img
     ];
@@ -170,6 +208,7 @@ $total = $countStmt->get_result()->fetch_assoc()['total'];
 
 
 echo json_encode([
+    'recompensas' => $recompensas,
     'page' => $page,
     'limit' => $limit,
     'total' => (int)$total,

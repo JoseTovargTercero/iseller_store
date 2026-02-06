@@ -17,7 +17,7 @@ try {
     initialReward:
 
     $stmt = $conexion_store->prepare("
-        SELECT id, tipo, monto, nivel_desbloqueo, estado
+        SELECT id, tipo, monto, porcentaje, nivel_desbloqueo, estado
         FROM recompensas_usuario 
         WHERE (usuario_id = ?) AND (estado = 'disponible' OR estado = 'bloqueado')
         ORDER BY nivel_desbloqueo DESC
@@ -38,8 +38,8 @@ try {
         // registrar descuento
 
           $stmtDiscount = $conexion_store->prepare("
-            INSERT INTO recompensas_usuario (usuario_id, nivel_desbloqueo, tipo, monto, estado)
-            VALUES (?, 1, 'descuento_ganancia', 0, 'disponible')");
+            INSERT INTO recompensas_usuario (usuario_id, nivel_desbloqueo, tipo, monto, porcentaje, estado)
+            VALUES (?, 1, 'descuento_ganancia', 0, 0.50, 'disponible')");
           $stmtDiscount->bind_param("i", $user_id);
           if (!$stmtDiscount->execute()) {
               throw new Exception("Error al agregar descuento: " . $conexion_store->error);

@@ -28,6 +28,11 @@ require_once 'session.php';
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'chat_panel.php' ? 'active fw-bold text-primary' : ''; ?>" href="chat_panel.php">
+                        <i class="bi bi-chat-dots-fill"></i> Chat
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'clientes.php' ? 'active fw-bold text-primary' : ''; ?>" href="clientes.php">
                         <i class="bi bi-people"></i> Clientes
                     </a>

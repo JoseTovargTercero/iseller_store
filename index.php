@@ -106,6 +106,9 @@ if (isLoggedIn()) {
 <!-- Custom Styles -->
 <link rel="stylesheet" href="assets/css/global-styles.css">
 
+<!-- Chat System CSS -->
+<link rel="stylesheet" href="assets/css/chat.css">
+
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 
@@ -430,6 +433,15 @@ if (isLoggedIn()) {
       0% { transform: translateX(-100%); }
       100% { transform: translateX(100%); }
   }
+
+
+   .text-sm{
+    font-size: 70% !important;
+ }
+
+ .text-xs{
+    font-size: 60% !important;
+ }
 </style>
     
     <!-- Scripts -->
@@ -446,7 +458,7 @@ if (isLoggedIn()) {
     <div class="toast-text">Agregado al carrito</div>
 </div>
 
-<body class="bg-light">
+<body class="bg-light" data-user-logged-in="<?php echo isLoggedIn() ? 'true' : 'false'; ?>">
     <!-- Navbar -->
     <nav class="navbar navbar-custom fixed-top" id="navbar">
         <div class="container-fluid d-flex align-items-center justify-content-between px-3 px-md-5">
@@ -536,7 +548,7 @@ if (isLoggedIn()) {
             <div class="navbar-progress-bar" style="width: 0%"></div>
         </div>
     </nav>
-
+     
     <!-- Hero Banner (Dynamic) -->
     <section class="hero-section">
         <div class="hero-bg" id="hero-bg"></div>
@@ -836,6 +848,61 @@ if (isLoggedIn()) {
         </div>
     </div>
 
+    <!-- Product Detail Modal -->
+    <div class="modal fade" id="modalProductoDetalle" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered product-modal-dialog">
+            <div class="modal-content product-modal-content">
+                <button type="button" class="btn-close btn-close-white product-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+                <div class="row g-0">
+                    <!-- Image Side (Protruding) -->
+                    <div class="col-md-5">
+                        <div class="product-modal-img-container">
+                             <img src="" id="modal-product-img" class="product-modal-img" alt="Product">
+                        </div>
+                    </div>
+                    <!-- Details Side -->
+                    <div class="col-md-7">
+                        <div class="product-modal-body">
+                            <div class="mb-4">
+                                <h2 class="modal-product-title" id="modal-product-name">Product Name</h2>
+                                <div class="modal-product-code">COD: <span id="modal-product-code">12345</span></div>
+                            </div>
+                            
+                            <div class="pricing-section mb-4">
+                                <div class="modal-product-price-main">
+                                    <span class="modal-product-currency">$</span><span id="modal-product-price-d">0.00</span>
+                                </div>
+                                <div class="modal-product-price-secondary">
+                                    <i class="bi bi-wallet2"></i> Bs <span id="modal-product-price-bs">0.00</span>
+                                </div>
+                            </div>
+
+                            <div class="modal-section-title">DETALLES Y BENEFICIOS</div>
+                            <ul id="modal-product-description" class="modal-benefits-list">
+                                <!-- Bullet points inserted via JS -->
+                            </ul>
+
+                            <div class="modal-actions-container">
+                                <div class="modal-qty-wrapper">
+                                    <button class="btn-qty" onclick="changeModalQty(-1)"><i class="bi bi-dash"></i></button>
+                                    <input type="number" class="qty-input" id="modal-product-qty" value="1" min="1" readonly>
+                                    <button class="btn-qty" onclick="changeModalQty(1)"><i class="bi bi-plus"></i></button>
+                                </div>
+
+                                <button class="btn modal-btn-add" id="modal-btn-add"
+                                    data-add-id="" data-codigo="" data-P_D="" data-P_P="" data-P_B="">
+                                    <i class="bi bi-cart-plus-fill"></i> AGREGAR AL CARRITO
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- jQuery -->
     <script src="assets/js/jquery.min.js"></script>
     <!-- Bootstrap Bundle -->
@@ -857,10 +924,7 @@ if (isLoggedIn()) {
 
         if (ref) {
             document.cookie = `referral_code=${ref}; path=/; max-age=2592000`;
-            console.log(ref);
         }
-
-
 
 
 
@@ -921,14 +985,6 @@ if (isLoggedIn()) {
                         $('#search-results-mobile').removeClass('show');
                     }
                 });
-
-                // si el scroll se mueve, cerrar el search overlay
-               /* window.addEventListener('scroll', () => {
-                    if (searchOverlay.classList.contains('active')) {
-                        searchOverlay.classList.remove('active');
-                        $('#search-results-mobile').removeClass('show');
-                    }
-                });*/
             }
 
             // --- STICKY PROGRESS OBSERVER ---
@@ -992,7 +1048,7 @@ if (isLoggedIn()) {
             });
         });
 
-        async function checkAvailableRewards() {
+        async function checkAvailableRewards(type = null) {
             try {
                 const res = await fetch('api/recompensas.php');
                 const data = await res.json();
@@ -1016,16 +1072,12 @@ if (isLoggedIn()) {
                             );
                             }
 
-                            let texto_recompensa_monetaria = `<span>🎉 ¡Felicidades! Has desbloqueado <b>$${data.rewards.monto}</b> por completar nivel <b>${data.rewards.nivel_desbloqueo}</b></span>`;
-                            let texto_recompensa_descuento = `<span>🎁 ¡Sorpresa! Has conseguido un <b>descuento especial</b> para tu próxima compra.</span>`;
-
-                           
+                          
                         // recorre las recompensas para mostrarlas en el modal
                         for (let i = 0; i < data.count; i++) {
                             const reward = data.rewards[i];
 
                             let rewardText = '';
-                            console.log(reward)
 
                             if (reward.tipo === 'referido') {
                                 // Texto especial para referidos
@@ -1040,6 +1092,7 @@ if (isLoggedIn()) {
                             } else {
                                 // Texto existente para otros tipos (descuentos, etc.)
                                 rewardText = `<span>🎁 ¡Sorpresa! Has conseguido un <b>descuento especial</b> para tu próxima compra.</span>`;
+
                             }
 
                             // Agregar el texto al contenedor
@@ -1060,9 +1113,9 @@ if (isLoggedIn()) {
         fetch('api/productos.php?mode=search_index')
             .then(res => res.json())
             .then(data => {
-                productos_indexados = data;
+                productos_indexados = data.searchIndex;
                 // Mapear claves para Fuse (revertir minificación)
-                const searchItems = data.map(item => ({
+                const searchItems = data.searchIndex.map(item => ({
                     id: item.id,
                     nombre: item.n, // 'n' es nombre
                     codigo: item.c,
@@ -1197,8 +1250,12 @@ if (isLoggedIn()) {
                                     ${rest}
                                 </div>
                                 <div class="d-flex gap-3 small">
-                                    <span class="fw-bold text-success">$${formatNumber(item.precio_dolar_visible)}</span>
-                                    <span class="text-muted border-start ps-3">${formatNumber(recortarADosDecimales(item.precio_bs_visible))} Bs</span>
+                                    <span class="fw-bold text-success">
+                                        $${formatNumber(item.precio_dolar_visible)}
+                                    </span>
+                                    <span class="text-muted border-start ps-3">
+                                        ${formatNumber(recortarADosDecimales(item.precio_bs_visible))} Bs
+                                    </span>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center gap-2" >
@@ -1282,13 +1339,14 @@ if (isLoggedIn()) {
                 Notiflix.Loading.standard('Cargando productos...');
                 loaderShown = true;
             }, 1000);
-
             try {
                 const res = await fetch(`api/productos.php?mode=grid&page=${currentPage}&limit=24&order=${currentSort}`);
                 const data = await res.json();
 
+                const recompensas = data.recompensas[0];
+
                 if (data.data && data.data.length > 0) {
-                    renderProductos(data.data);
+                    renderProductos(data.data, recompensas);
 
                     data.data.forEach(p => {
                         productos_por_id[p.id] = p;
@@ -1317,11 +1375,8 @@ if (isLoggedIn()) {
         }
 
 
-        function renderProductos(listaProductos) {
+        function renderProductos(listaProductos, recompensas) {
             // Remove spinner temporarily to append before it, or just append to grid
-            // El grid en el HTML tiene un spinner dentro. Lo ideal es insertar las cards ANTES del spinner.
-            // Para simplificar, usaremos append al grid y mantendremos el spinner en un contenedor separado o al final.
-            // Pero en el HTML original el spinner está DENTRO de products-grid.
             
             // Limpiar skeletons o spinner si es la primera carga
             if(currentPage === 1) {
@@ -1335,30 +1390,44 @@ if (isLoggedIn()) {
                 const btnDisabled = isOutOfStock ? 'disabled btn-disabled' : '';
                 const btnText = isOutOfStock ? 'Agotado' : '';
 
+
+                let precio_dolar_visible = producto.precio_dolar_visible;
+                let precio_bs_visible = producto.precio_bs_visible;
+                
+                // Calcula precio final
+                let precio_dolar = '$' + formatNumber(recortarADosDecimales(precio_dolar_visible));
+                let precio_bs = 'Bs' + formatNumber(recortarADosDecimales(precio_bs_visible));
+
+                    if (recompensas) {
+                        const tipo_recompensa = recompensas.tipo;
+
+                        if (tipo_recompensa === 'descuento_ganancia') {
+                            precio_dolar_visible = producto.costo_dolar;
+                            precio_bs_visible = producto.costo_bs;
+                            precio_dolar = `$${formatNumber(recortarADosDecimales(producto.costo_dolar))} <span class="text-decoration-line-through text-danger text-xs">${precio_dolar}</span> `;
+                            precio_bs = `Bs ${formatNumber(recortarADosDecimales(producto.costo_bs))} <span class="text-decoration-line-through text-danger text-sm">${precio_bs}</span> `;
+                        }
+                    }
+
+
+                // Preparing Image source for modal interaction
+                const imgSrc = producto.img != '' ? producto.img : `https://placehold.co/400x400/f3f4f6/a3a3a3?text=${producto.nombre.substring(0,2)}`;
+
                 let card = `
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3 product-item">
                         <div class="product-card ${opacityClass}">
-                            <div class="product-img-wrapper">`;
-
-                            if (producto.img != '') {
-                                card += `<img src="${producto.img}" 
+                            <div class="product-img-wrapper" style="cursor: pointer;" onclick="openProductModal('${producto.id}')">`;
+                            card += `<img src="${imgSrc}" 
                                      loading="lazy"
                                      class="product-img imagen-cuadrada" alt="${producto.nombre}">`;
-                            } else {
-                                card += `<img src="https://placehold.co/400x400/f3f4f6/a3a3a3?text=${producto.nombre.substring(0,2)}" 
-                                     loading="lazy"
-                                     class="product-img imagen-cuadrada opacity-50 grayscale" alt="${producto.nombre}">`;
-                            }
-                            
-                            card += `
-                                     </div>
+                            card += `</div>
                             <div class="product-body">
                       
                                 <h3 class="product-title" title="${producto.nombre}">${producto.nombre}</h3>
                                 
                                 <div class="price-container">
-                                    <div class="price-main">$${formatNumber(producto.precio_dolar_visible)}</div>
-                                    <div class="price-sub small text-muted">${formatNumber(recortarADosDecimales(producto.precio_bs_visible))} Bs</div>
+                                    <div class="price-main"><span class="price-dolar">${precio_dolar}</span></div>
+                                    <div class="price-sub small text-muted"><span class="price-bs">${precio_bs}</span></div>
                                 </div>
 
                                 <div class="card-actions">
@@ -1371,20 +1440,118 @@ if (isLoggedIn()) {
                                     <button style="height: 37px;" class="btn btn-sm btn-add btn-add-to-car ${btnDisabled}" 
                                         data-add-id="${producto.id}"
                                         data-codigo="${producto.codigo || ''}"
-                                        data-P_D="${producto.precio_dolar_visible}"
-                                        data-P_P="${producto.precio_peso_visible}"
-                                        data-P_B="${producto.precio_bs_visible}">
+                                        data-P_D="${precio_dolar_visible}"
+                                        data-P_B="${precio_bs_visible}">
                                         <i class="bi bi-cart-plus"></i> ${btnText}
                                         <span class="cart-item-anim"></span>
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 $("#products-grid").append(card);
             });
         }
+        // --- NEW MODAL LOGIC ---
+
+        function openProductModal(productId) {
+            const producto = productos_por_id[productId];
+            if (!producto) return;
+
+            // Populate Elements
+            document.getElementById('modal-product-name').textContent = producto.nombre;
+            document.getElementById('modal-product-code').textContent = producto.codigo || 'N/A';
+            document.getElementById('modal-product-price-d').textContent = formatNumber(producto.precio_dolar_visible);
+            document.getElementById('modal-product-price-bs').textContent = formatNumber(producto.precio_bs_visible);
+
+            // Image
+            const imgSrc = producto.img != '' ? producto.img : `https://placehold.co/400x400/f3f4f6/a3a3a3?text=${producto.nombre.substring(0,2)}`;
+            document.getElementById('modal-product-img').src = imgSrc;
+
+            // Reset Qty
+            document.getElementById('modal-product-qty').value = 1;
+
+            // Update Add to Cart Button
+            const btn = document.getElementById('modal-btn-add');
+            btn.dataset.addId = producto.id;
+            btn.dataset.codigo = producto.codigo || '';
+            btn.dataset.P_D = producto.precio_dolar_visible;
+            btn.dataset.P_P = producto.precio_peso_visible;
+            btn.dataset.P_B = producto.precio_bs_visible;
+
+            // Benefits / Description Logic
+            const descList = document.getElementById('modal-product-description');
+            descList.innerHTML = '';
+            
+            // Try to use description if available, otherwise generic benefits or nothing
+            if (producto.descripcion) {
+                // Split by newlines or bullets if structured
+                 const lines = producto.descripcion.split(/\r?\n|•|- /).filter(line => line.trim() !== '');
+                 if(lines.length > 0) {
+                     lines.forEach(line => {
+                         descList.innerHTML += `<li>${line.trim()}</li>`;
+                     });
+                 } else {
+                     descList.innerHTML += `<li>${producto.descripcion}</li>`;
+                 }
+            } else {
+                // Default generic benefits if empty
+                descList.innerHTML = `
+                    <li>Alta calidad garantizada</li>
+                    <li>Disponibilidad inmediata</li>
+                    <li>Mejor relación precio-valor</li>
+                `;
+            }
+
+            // Show Modal
+            const modal = new bootstrap.Modal(document.getElementById('modalProductoDetalle'));
+            modal.show();
+        }
+
+        function changeModalQty(delta) {
+            const input = document.getElementById('modal-product-qty');
+            let val = parseInt(input.value) || 1;
+            val += delta;
+            
+            // Logic to check max stock could be added here if we had current stock handy easily in scope
+            // For now, simpler check
+            if (val < 1) val = 1;
+            
+            // We can check stock from the current button data if needed, but let's assume loose check or add param
+            // const btn = document.getElementById('modal-btn-add');
+            // const pid = btn.dataset.addId;
+            // const product = productos_por_id[pid];
+            // if (product && val > product.stock && product.mayor != '1') val = product.stock;
+
+            input.value = val;
+            
+            // Sync with the specific product card input if we want seamless experience?
+            // Not strictly required but nice. Leaving simple for now.
+        }
+
+        // Override the global click listener for the modal button to use specific input
+        // Actually the global listener `document.addEventListener('click'...` handles `.btn-add-to-car`
+        // It looks for `input[data-cantidad-id="${id}"]`. 
+        // Our modal input DOES NOT have `data-cantidad-id`.
+        // So we need to tweak `addtocarJS` OR the click listener.
+        
+        // Let's modify the click listener or `addtocarJS` to accept an explicit quantity value fallback.
+        // `addtocarJS` already accepts `cantidad_scann`. We can use that.
+        
+        // Let's modify the modal add button onclick to call addtocarJS directly instead of relying on the generic listener,
+        // OR modify the generic listener to handle the modal context.
+        // The generic listener finds ".btn-add-to-car". Our modal button HAS this class.
+        // It then calls `addtocarJS(..., null, null, btn)`.
+        // Inside `addtocarJS`: `const inputCantidad = document.querySelector('input[data-cantidad-id="${id}"]');`
+        // It will find the GRID input. This is actually fine! It will add the grid ID's quantity.
+        // BUT we want the MODAL's quantity.
+        
+        // FIX: Remove `.btn-add-to-car` class from the Modal button and give it a unique listener or ID,
+        // OR update the generic listener.
+        // Updating generic listener is risky for regressions.
+        // Better: specific listener for modal add button.
+        
+        // I'll add an ID listener for `modal-btn-add` at the end of this block.
 
         // Intersection Observer
         const observer = new IntersectionObserver((entries) => {
@@ -1449,6 +1616,42 @@ if (isLoggedIn()) {
         // * IndexedBD //
 
         let carritoActivo = {};
+
+        // Listen for Modal Add to Cart
+        document.getElementById('modal-btn-add').addEventListener('click', function() {
+            const btnMod = this;
+            const id = btnMod.dataset.addId;
+            const qty = document.getElementById('modal-product-qty').value;
+            
+            if(!id) return;
+
+            // 1. Sincronizar cantidad en todos los inputs visibles de este producto
+            document.querySelectorAll(`input[data-cantidad-id="${id}"]`).forEach(input => {
+                input.value = qty;
+            });
+
+            // 2. Buscar el botón de agregar original (en grilla o buscador)
+            // Priorizamos el de la grilla si existe, sino cualquier otro
+            const originalBtn = document.querySelector(`.btn-add-to-car[data-add-id="${id}"]`);
+            
+            if (originalBtn) {
+                // Simular click en el botón original
+                originalBtn.click();
+                bootstrap.Modal.getInstance(document.getElementById('modalProductoDetalle')).hide();
+            } else {
+                // Fallback: Si no se encuentra el botón físico (ej: producto no renderizado aún), 
+                // llamar directamente a la función
+                addtocarJS(
+                    id, 
+                    btnMod.dataset.p_d, 
+                    btnMod.dataset.p_p, 
+                    btnMod.dataset.p_b, 
+                    null, 
+                    qty, 
+                    btnMod
+                );
+            }
+        });
 
         async function updateCartTimestamp() {
             await db.cart_meta.put({ id: 'last_updated', timestamp: Date.now() });
@@ -1643,10 +1846,8 @@ if (isLoggedIn()) {
             if (items.length > 0) {
                 let html = '';
                 items.forEach(element => {
-                    let subtotalPeso = element.pricePeso * element.qty;
                     let subtotalBolivar = element.priceBolivar * element.qty;
                     let subtotalDolar = element.price * element.qty;
-                    subtotalPeso = Math.round(subtotalPeso);
 
                     html += `
                         <div class="cart-item mb-3 pb-3 border-bottom">
@@ -1655,7 +1856,7 @@ if (isLoggedIn()) {
                                     <h6 class="mb-1 small">${element.name}</h6>
                                     <div class="text-muted small">Cantidad: ${element.qty}</div>
                                     <div class="small">
-                                        <span class="text-success">$${formatNumber(subtotalDolar)}</span>
+                                        <span class="text-success">$${formatNumber(recortarADosDecimales(subtotalDolar))}</span>
                                     </div>
                                 </div>
                                 <button class="btn btn-sm btn-outline-danger" onclick="quitarProductoJs('${element.id}')">
@@ -1665,7 +1866,6 @@ if (isLoggedIn()) {
                         </div>
                     `;
 
-                    total_pesos += subtotalPeso;
                     total_dolares += subtotalDolar;
                     total_bolivares += subtotalBolivar;
                 });
@@ -1674,8 +1874,8 @@ if (isLoggedIn()) {
                 cartItemsMobile.html(html);
                 total_pesos = Math.round(total_pesos);
 
-                $("#cart-total-dolar, .cart-total-dolar-mobile").text(`$${formatNumber(total_dolares)}`);
-                $("#cart-total-bs, .cart-total-bs-mobile").text(`${formatNumber(total_bolivares)} Bs`);
+                $("#cart-total-dolar, .cart-total-dolar-mobile").text(`$${formatNumber(recortarADosDecimales(total_dolares))}`);
+                $("#cart-total-bs, .cart-total-bs-mobile").text(`${formatNumber(recortarADosDecimales(total_bolivares))} Bs`);
 
                 cartFooter.removeClass('hide');
                 cartFooterMobile.removeClass('hide');
@@ -1806,7 +2006,6 @@ if (isLoggedIn()) {
                     })
                     .then((res) => res.text())
                     .then(async (text) => {
-                        console.log('Respuesta cruda:', text);
 
                         let response;
                         try {
@@ -1858,5 +2057,11 @@ if (isLoggedIn()) {
             }
         }
     </script>
+
+    <!-- Chat Component (Only for logged-in users) -->
+    <?php if (isLoggedIn()): ?>
+        <?php include 'assets/components/chat.html'; ?>
+        <script src="assets/js/chat.js"></script>
+    <?php endif; ?>
 </body>
 </html>

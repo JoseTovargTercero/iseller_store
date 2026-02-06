@@ -20,6 +20,8 @@ $userName = getUserName();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Custom Styles -->
     <link rel="stylesheet" href="assets/css/global-styles.css">
+    <!-- Chat System CSS -->
+    <link rel="stylesheet" href="assets/css/chat.css">
     
     <style>
         body {
@@ -313,7 +315,7 @@ $userName = getUserName();
     </style>
 </head>
 
-<body>
+<body data-user-logged-in="true">
     <!-- Navbar -->
     <nav class="navbar navbar-custom fixed-top">
         <div class="container-fluid d-flex align-items-center justify-content-between px-3 px-md-5">
@@ -1074,5 +1076,9 @@ $userName = getUserName();
         // Load data on page load
         document.addEventListener('DOMContentLoaded', loadProfileData);
     </script>
+    
+    <!-- Chat Component -->
+    <?php include 'assets/components/chat.html'; ?>
+    <script src="assets/js/chat.js"></script>
 </body>
 </html>
