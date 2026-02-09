@@ -1052,15 +1052,13 @@ if (isLoggedIn()) {
             try {
                 const res = await fetch('api/recompensas.php');
                 const data = await res.json();
-                
+                console.log(data)
                 if(data.success && data.has_rewards) {
                     // Update UI to show rewards available
                     const rewardsContainer = document.querySelector('#reward-dropdown');
                     if(rewardsContainer) {
-                        
                         rewardsContainer.classList.remove('hide');
                         document.querySelector('#badge-reward').innerHTML = data.count;
-                       
                             if(data.init_reward === true) {
                             Notiflix.Report.success(
                                 '¡Recompensas obtenidas!',
@@ -1072,7 +1070,6 @@ if (isLoggedIn()) {
                             );
                             }
 
-                          
                         // recorre las recompensas para mostrarlas en el modal
                         for (let i = 0; i < data.count; i++) {
                             const reward = data.rewards[i];
