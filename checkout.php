@@ -844,7 +844,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 <div class="bg-light p-3 rounded mb-3">
                      <div class="d-flex justify-content-between mb-1"><span>Subtotal:</span> <p><span id="sum-subtotal" class="">$0.00</span> / <span id="sum-subtotal-bs" >0.00 Bs</span></p></div>
-                     <div class="d-flex justify-content-between mb-1 hidden" id="delivery-row"><span>Envío:</span> <span id="sum-shipping">$0.00</span></div>
+                     <div class="d-flex justify-content-between mb-1 d-none" id="delivery-row"><span>Envío:</span> <span id="sum-shipping">$0.00</span></div>
                      <!-- Discount Row (Hidden by default) -->
                      <div id="discount-row" class="d-flex justify-content-between mb-1 text-danger" style="display: none !important;">
                          <span class="d-flex align-items-center gap-2">
@@ -1093,8 +1093,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     shippingCost = 0; // Gratis
                     shippingCostBs = 0;
                 } else {
-                    shippingCost = parseInt(<?php echo $costo_envio_dolares; ?>); // aqui se asigna el costo de envio
-                    shippingCostBs = parseInt(<?php echo $costo_envio_bs; ?>);
+                    shippingCost = parseFloat(<?php echo $costo_envio_dolares; ?>); // aqui se asigna el costo de envio
+                    shippingCostBs = parseFloat(<?php echo $costo_envio_bs; ?>);
                 }
             } else {
                 shippingCost = 0;
@@ -1168,10 +1168,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             document.getElementById('cart-items-preview').innerHTML = html;
             
-            if(shippingCost === 0){
-                document.getElementById('delivery-row').classList.add('hidden');
+            if(deliveryType !== 'delivery'){
+                document.getElementById('delivery-row').classList.add('d-none');
             }else{
-                document.getElementById('delivery-row').classList.remove('hidden');
+                document.getElementById('delivery-row').classList.remove('d-none');
             }
             document.getElementById('sum-subtotal').textContent = '$' + subtotalUsd.toFixed(2);
             document.getElementById('sum-subtotal-bs').textContent = subtotalBsDisplay.toFixed(2) + ' Bs';
@@ -1474,6 +1474,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 document.getElementById('pickup-info-section').classList.remove('d-none');
                 document.getElementById('btn-next-1').disabled = false; // Siempre puede avanzar en pickup
             }
+            // Actualizar el resumen para que se vea reflejado el costo de envío
+            actualizarResumen();
         }
 
         function renderPaymentSummary() {
