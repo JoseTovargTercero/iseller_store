@@ -12,6 +12,7 @@ header('Content-Type: application/json');
 // Verificar autenticación
 requireLogin();
 $usuario_id = getUserId();
+session_write_close(); // Liberar sesión para no bloquear navegación
 
 // Parámetros opcionales
 $estado = isset($_GET['estado']) ? $_GET['estado'] : null;

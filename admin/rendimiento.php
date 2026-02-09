@@ -16,6 +16,7 @@ requireAdminLogin();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/admin.css">
+    <meta name="csrf-token" content="<?php echo getCSRFToken(); ?>">
     <style>
         .card-stat-eco {
             transition: all 0.3s cubic-bezier(.25,.8,.25,1);
@@ -123,15 +124,12 @@ requireAdminLogin();
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/js/app.js"></script>
     <script>
         let performanceChart = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             loadStats();
-            
-            document.getElementById('btnLogout').onclick = function() {
-                fetch('api/auth.php?action=logout').then(() => window.location.reload());
-            };
         });
 
         async function loadStats() {

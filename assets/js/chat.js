@@ -200,6 +200,16 @@ class ChatSystem {
             targetView.classList.add('active');
             this.currentView = viewName;
         }
+        
+        // Gestionar visibilidad del botón de "volver" (antes cerrar)
+        const closeBtn = document.getElementById('chat-close-btn');
+        if (closeBtn) {
+            if (viewName === 'start') {
+                closeBtn.style.setProperty('display', 'none', 'important');
+            } else {
+                closeBtn.style.setProperty('display', 'flex', 'important');
+            }
+        }
     }
     
     showStartView() {
@@ -268,12 +278,14 @@ class ChatSystem {
                     <h4 class="chat-conversation-title">
                         ${this.getIconText(conv.categoria.icono)} ${conv.asunto}
                     </h4>
-                    <span class="chat-conversation-badge ${conv.estado}">${this.getEstadoText(conv.estado)}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        ${conv.mensajes_sin_leer > 0 ? `<span class="chat-notification-badge position-relative" style="top: 0; right: 0;">${conv.mensajes_sin_leer}</span>` : ''}
+                        <span class="chat-conversation-badge ${conv.estado}">${this.getEstadoText(conv.estado)}</span>
+                    </div>
                 </div>
                 <p class="chat-conversation-preview">${conv.ultimo_mensaje || 'Sin mensajes'}</p>
                 <div class="chat-conversation-meta">
                     <span><i class="bi bi-clock"></i> ${this.formatDate(conv.ultimo_mensaje_en)}</span>
-                    ${conv.mensajes_sin_leer > 0 ? `<span class="chat-notification-badge">${conv.mensajes_sin_leer}</span>` : ''}
                 </div>
             `;
             
@@ -402,9 +414,17 @@ class ChatSystem {
     }
     
     addMessageToUI(message) {
+        if (!message || !message.id) return;
+        
+        // Verificar si el mensaje ya existe en el DOM
+        if (document.querySelector(`[data-message-id="${message.id}"]`)) {
+            return;
+        }
+
         const container = document.getElementById('chat-messages');
         const messageEl = document.createElement('div');
         messageEl.className = `chat-message ${message.es_admin ? 'admin' : 'user'}`;
+        messageEl.setAttribute('data-message-id', message.id);
         
         const statusIcon = this.getMessageStatusIcon(message);
         
@@ -588,11 +608,7 @@ class ChatSystem {
     }
     
     closeChat() {
-        const overlay = document.getElementById('chat-modal-overlay');
-        if (overlay) {
-            overlay.classList.remove('active');
-        }
-        this.stopPolling();
+        // En la interfaz independiente, "cerrar" significa volver a la vista inicial del chat
         this.showStartView();
     }
     

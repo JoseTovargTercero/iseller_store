@@ -15,6 +15,7 @@ if (!isAdminLoggedIn()) {
     echo json_encode(['success' => false, 'message' => 'No autorizado']);
     exit;
 }
+session_write_close(); // Liberar sesión de admin para evitar bloqueos
 
 // Validar parámetros
 if (!isset($_GET['conversacion_id']) || !isset($_GET['ultimo_mensaje_id'])) {

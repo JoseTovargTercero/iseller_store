@@ -1077,8 +1077,8 @@ $userName = getUserName();
         document.addEventListener('DOMContentLoaded', loadProfileData);
     </script>
     
-    <!-- Chat Component -->
-    <?php include 'assets/components/chat.html'; ?>
-    <script src="assets/js/chat.js"></script>
+    <!-- Chat Component (Simplified) -->
+    <?php include 'assets/components/chat-button.php'; ?>
+    <script src="assets/js/chat-simple.js"></script>
 </body>
 </html>

@@ -20,6 +20,7 @@ requireAdminLogin();
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/admin.css">
+    <meta name="csrf-token" content="<?php echo getCSRFToken(); ?>">
 </head>
 <body>
     

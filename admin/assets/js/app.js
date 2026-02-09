@@ -21,10 +21,26 @@ const STATUS_FLOW = {
 
 function setupListeners() {
     // Logout
-    document.getElementById('btnLogout').addEventListener('click', async () => {
-        await fetch('api/auth.php', { method: 'POST', body: JSON.stringify({ action: 'logout' }) });
-        window.location.href = 'login.php';
-    });
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', async () => {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            try {
+                const res = await fetch('api/auth.php', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'logout', csrf_token: csrfToken }) 
+                });
+                const data = await res.json();
+                if (data.success) {
+                    window.location.href = 'login.php';
+                }
+            } catch (e) {
+                console.error("Logout error", e);
+                window.location.href = 'login.php';
+            }
+        });
+    }
 
     // Filters
     document.querySelectorAll('input[name="statusFilter"]').forEach(radio => {

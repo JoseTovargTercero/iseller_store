@@ -12,6 +12,7 @@ header('Content-Type: application/json');
 // Verificar autenticación
 requireLogin();
 $usuario_id = getUserId();
+session_write_close(); // Liberar el bloqueo de sesión para que otras peticiones no esperen
 
 // Validar parámetros
 if (!isset($_GET['conversacion_id']) || !isset($_GET['ultimo_mensaje_id'])) {

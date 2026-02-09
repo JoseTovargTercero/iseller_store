@@ -2058,10 +2058,8 @@ if (isLoggedIn()) {
         }
     </script>
 
-    <!-- Chat Component (Only for logged-in users) -->
-    <?php if (isLoggedIn()): ?>
-        <?php include 'assets/components/chat.html'; ?>
-        <script src="assets/js/chat.js"></script>
-    <?php endif; ?>
+    <!-- Chat Component (Simplified) -->
+    <?php include 'assets/components/chat-button.php'; ?>
+    <script src="assets/js/chat-simple.js"></script>
 </body>
 </html>

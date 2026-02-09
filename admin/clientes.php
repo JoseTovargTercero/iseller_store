@@ -16,6 +16,7 @@ requireAdminLogin();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/admin.css">
+    <meta name="csrf-token" content="<?php echo getCSRFToken(); ?>">
 </head>
 <body>
     
@@ -69,6 +70,8 @@ requireAdminLogin();
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Add this to load common logout handling if not in a separate js -->
+    <script src="assets/js/app.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             loadCustomers();
@@ -77,10 +80,6 @@ requireAdminLogin();
             document.getElementById('searchCustomer').oninput = (e) => {
                 clearTimeout(searchTimer);
                 searchTimer = setTimeout(() => loadCustomers(e.target.value), 400);
-            };
-
-            document.getElementById('btnLogout').onclick = function() {
-                fetch('api/auth.php?action=logout').then(() => window.location.reload());
             };
         });
 
