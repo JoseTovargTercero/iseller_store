@@ -24,6 +24,46 @@ $getUserLevel = getUserLevel();
 $nivelUsuario = $getUserLevel[0];
 $puntosUsuario = $getUserLevel[1];
 
+/**
+ * Envía una notificación por correo a la administración sobre una nueva compra
+ */
+function enviarNotificacionCompra($orden_id, $user_id, $total_dolares, $num_operacion, $hora_operacion, $tipo_entrega) {
+    global $conexion_store;
+    
+    // Obtener datos del usuario
+    $stmt = $conexion_store->prepare("SELECT nombre, email, telefono FROM usuarios WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $usuario = $res->fetch_assoc();
+    $stmt->close();
+    
+    $nombre_cliente = $usuario['nombre'] ?? 'N/A';
+    $email_cliente = $usuario['email'] ?? 'N/A';
+    $telefono_cliente = $usuario['telefono'] ?? 'N/A';
+
+    $from = 'nuevas-compras@iseller-tiendas.com';
+    $subject = "Nueva Compra iSeller Store - Orden #$orden_id";
+    $to = 'contacto@iseller-tiendas.com';
+
+    $message = "Se ha registrado una nueva compra:\n\n";
+    $message .= "Orden ID: #$orden_id\n";
+    $message .= "Cliente: $nombre_cliente\n";
+    $message .= "Email: $email_cliente\n";
+    $message .= "Teléfono: $telefono_cliente\n";
+    $message .= "Monto Total: $" . number_format($total_dolares, 2) . "\n";
+    $message .= "Ref. Pago: $num_operacion\n";
+    $message .= "Fecha/Hora Pago: $hora_operacion\n";
+    $message .= "Tipo de Entrega: " . ($tipo_entrega === 'delivery' ? 'Delivery' : 'Retiro en Tienda') . "\n";
+    $message .= "\nFavor revisar el panel administrativo para procesar la orden.";
+
+    $headers = "From: $from\r\n";
+    $headers .= "Reply-To: $from\r\n";
+    $headers .= "X-Mailer: PHP/" . phpversion();
+
+    @mail($to, $subject, $message, $headers);
+}
+
 // Procesar solicitudes POST (API)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -513,6 +553,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Confirmar transacciones
             $conexion->commit();
             $conexion_store->commit();
+
+            // Enviar notificación por correo
+            enviarNotificacionCompra($orden_id, $user_id, $total_pagar_dolares, $num_operacion, $hora_operacion, $tipo_entrega);
 
             echo json_encode([
                 'success' => true,
