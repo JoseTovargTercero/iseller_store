@@ -28,5 +28,16 @@ if ($res) {
     }
 }
 
+// Visitas Totales
+$resVisitas = $conexion_store->query("SELECT COUNT(*) as total FROM visitas");
+$visitasTotales = $resVisitas ? $resVisitas->fetch_assoc()['total'] : 0;
+
+// Visitas Hoy
+$resVisitasHoy = $conexion_store->query("SELECT COUNT(*) as total FROM visitas WHERE DATE(fecha) = CURDATE()");
+$visitasHoy = $resVisitasHoy ? $resVisitasHoy->fetch_assoc()['total'] : 0;
+
+$stats['visitas_totales'] = (int)$visitasTotales;
+$stats['visitas_hoy'] = (int)$visitasHoy;
+
 echo json_encode(['success' => true, 'stats' => $stats]);
 ?>

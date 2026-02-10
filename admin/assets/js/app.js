@@ -104,6 +104,18 @@ function renderStats(stats) {
                 <div class="stat-label">Rechazadas</div>
             </div>
         </div>
+        <div class="col-6 col-md-1">
+            <div class="stat-card bg-light">
+                <div class="stat-num text-dark">${stats.visitas_hoy}</div>
+                <div class="stat-label">Visitas Hoy</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-1">
+            <div class="stat-card bg-light">
+                <div class="stat-num text-secondary">${stats.visitas_totales}</div>
+                <div class="stat-label">Total Visitas</div>
+            </div>
+        </div>
     `;
 }
 

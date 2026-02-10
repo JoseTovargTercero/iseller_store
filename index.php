@@ -63,6 +63,10 @@ if (isLoggedIn()) {
 }
 // -----------------------------------
 
+// Registro de métricas
+require_once('core/metrics.php');
+registrarVisita($conexion_store);
+
 ?>
 
 <!DOCTYPE html>
