@@ -167,7 +167,9 @@ CREATE TABLE `usuarios` (
   `puntos` decimal(6,2) DEFAULT 0.00,
   `nivel` int(11) DEFAULT 1,
   `reset_token` varchar(255) DEFAULT NULL,
-  `reset_expires` datetime DEFAULT NULL
+  `reset_expires` datetime DEFAULT NULL,
+  `referral_code` varchar(255) DEFAULT NULL,
+  `session_id` varchar(255) DEFAULT NULL,
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --

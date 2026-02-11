@@ -69,6 +69,7 @@ class SystemUserController
                 'id' => $usuario['id'],
                 'nombre' => $usuario['nombre'],
                 'email' => $usuario['email'],
+                'session_id' => $usuario['session_id'] ?? null,
                 'redirect_url' => 'index.php'
             ];
 
