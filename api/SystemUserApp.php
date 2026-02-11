@@ -120,15 +120,19 @@ class SystemUserController
             // Descartar el token después de usarlo (según lógica propuesta del usuario)
             $this->model->descartarToken($token);
 
+            /*
             $data = [
                 'id' => $usuario['id'],
                 'nombre' => $usuario['nombre'],
                 'email' => $usuario['email'],
                 'session_id' => $user['session_id'],
                 'redirect_url' => 'index.php'
-            ];
+            ];*/
+            // redirige al index
+            header("Location: ../index.php");
+            exit;
 
-            $this->jsonResponse(true, 'Sesión restaurada con éxito.', $data, 200);
+          //  $this->jsonResponse(true, 'Sesión restaurada con éxito.', $data, 200);
         } catch (Throwable $e) {
             error_log("Error en verificarLoginApp: " . $e->getMessage());
             $this->jsonResponse(false, 'Error interno del servidor: ' . $e->getMessage(), null, 500);
