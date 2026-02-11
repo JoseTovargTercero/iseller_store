@@ -17,7 +17,7 @@ class SystemUserModel
      */
     public function obtenerPorEmail(string $email): ?array
     {
-        $sql = "SELECT id, nombre, email, password, estado 
+        $sql = "SELECT id, nombre, email, password, estado, nivel, puntos 
                 FROM {$this->table} 
                 WHERE email = ? 
                 LIMIT 1";
@@ -111,6 +111,73 @@ class SystemUserModel
             ]
         ];
     }
+
+
+
+
+
+    /**
+     * Recupera los datos del usuario mediante el token de session (session_id)
+     */
+    public function obtenerUsuarioPorToken(string $token): ?array
+    {
+        $sql = "SELECT id, nombre, email, nivel, estado, session_id
+                FROM {$this->table}
+                WHERE session_id = ? AND estado = 1 
+                LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            throw new mysqli_sql_exception("Error al preparar consulta: " . $this->db->error);
+        }
+
+        $stmt->bind_param('s', $token);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $data = $res->fetch_assoc();
+        $stmt->close();
+
+        return $data;
+    }
+
+    /**
+     * Limpia el session_id del usuario.
+     */
+    public function descartarToken(string $token): void
+    {
+        $sql = "UPDATE {$this->table} SET session_id = NULL WHERE session_id = ?";
+        $stmt = $this->db->prepare($sql);
+        if ($stmt) {
+            $stmt->bind_param('s', $token);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+
+    /**
+     * Retorna datos de usuario para login sin contraseña (por sesión previa).
+     */
+    public function loginPassLeft(string $email): array
+    {
+        $user = $this->obtenerPorEmail($email);
+
+        if (!$user) {
+            return ['verificado' => false, 'mensaje' => 'Usuario no encontrado.'];
+        }
+
+        return [
+            'verificado' => true,
+            'user' => $user
+        ];
+    }
+
+
+
+
+
+
+
+
 
     /**
      * Genera un UUID v4.

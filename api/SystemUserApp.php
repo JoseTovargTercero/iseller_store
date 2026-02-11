@@ -83,18 +83,61 @@ class SystemUserController
     /**
      * Verifica si hay una sesión activa.
      */
+  
+
     public function verificarLoginApp(): void
     {
-        if (isLoggedIn()) {
-            $this->jsonResponse(true, 'Sesión activa.', [
-                'id' => $_SESSION['user_id'],
-                'nombre' => $_SESSION['user_nombre'],
-                'email' => $_SESSION['user_email']
-            ], 200);
-        } else {
-            $this->jsonResponse(false, 'No hay sesión activa.', null, 401);
+        $token = $_POST['token'] ?? null;
+
+        if (!$token) {
+            $this->jsonResponse(false, 'No se recibió el token de la sesión.', null, 401);
+            return;
+        }
+
+        $user = $this->model->obtenerUsuarioPorToken($token);
+
+        if ($user === null) {
+            $this->jsonResponse(false, 'Token de sesión inválido o expirado.', null, 401);
+            return;
+        }
+
+        try {
+            $auth = $this->model->loginPassLeft($user['email']);
+
+            if (!$auth['verificado']) {
+                $this->jsonResponse(false, 'Error al recuperar datos del usuario.', null, 500);
+                return;
+            }
+
+            $usuario = $auth['user'];
+
+            // Iniciar sesión estándar del proyecto utilizando core/session.php
+            loginUser($usuario);
+
+            // También guardamos el session_id en la sesión para futura referencia
+            $_SESSION['session_id'] = $user['session_id'];
+
+            // Descartar el token después de usarlo (según lógica propuesta del usuario)
+            $this->model->descartarToken($token);
+
+            $data = [
+                'id' => $usuario['id'],
+                'nombre' => $usuario['nombre'],
+                'email' => $usuario['email'],
+                'session_id' => $user['session_id'],
+                'redirect_url' => 'index.php'
+            ];
+
+            $this->jsonResponse(true, 'Sesión restaurada con éxito.', $data, 200);
+        } catch (Throwable $e) {
+            error_log("Error en verificarLoginApp: " . $e->getMessage());
+            $this->jsonResponse(false, 'Error interno del servidor: ' . $e->getMessage(), null, 500);
         }
     }
+
+
+
+
 }
 
 $accion = $_GET['accion'] ?? '';
