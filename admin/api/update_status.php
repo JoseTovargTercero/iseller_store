@@ -325,6 +325,7 @@ try {
                 $stmtUpdateLevel->close();
             }
         }
+    }
 
     /* =========================
        ACTUALIZAR ESTADO EN ECOMMERCE
