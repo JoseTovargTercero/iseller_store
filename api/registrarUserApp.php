@@ -1,6 +1,6 @@
 <?php
-require_once('core/db.php');
-require_once('core/session.php');
+require_once(__DIR__ . '/../core/db.php');
+require_once(__DIR__ . '/../core/session.php');
 
 header('Content-Type: application/json');
 
