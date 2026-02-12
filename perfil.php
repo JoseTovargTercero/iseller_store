@@ -682,7 +682,7 @@ $userName = getUserName();
 
                 
                 if (!data.success) {
-                    alert('Error al cargar datos: ' + data.message);
+                    Notiflix.Notify.failure('Error al cargar datos: ' + data.message);
                     return;
                 }
                 

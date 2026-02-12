@@ -214,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Buscar recompensa disponible (prioridad: monetaria primero, luego descuento)
         $stmtRewards = $conexion_store->prepare("
-            SELECT id, tipo, monto 
+            SELECT id, tipo, monto, porcentaje
             FROM recompensas_usuario 
             WHERE usuario_id = ? AND estado = 'disponible'
             ORDER BY tipo DESC, monto DESC
@@ -228,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $recompensa_usada_id = $rowReward['id'];
             $tipo_recompensa_usada = $rowReward['tipo'];
             $monto_recompensa = floatval($rowReward['monto']);
-            
+            $porcentaje_recompensa = $rowReward['porcentaje'];            
             if ($tipo_recompensa_usada === 'monetaria') {
                 // Recompensa monetaria: descuento directo
                 if ($total_pagar_dolares >= $monto_recompensa) {
@@ -248,7 +248,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Usaremos los datos de costos que ya tenemos más adelante en el flujo
                 // Por ahora marcamos que se debe calcular
                 // La ganancia se calculará en el loop de productos
-                $generar_puntos = false; // No genera puntos este tipo de compra
+                if ($porcentaje_recompensa != '0.50') {
+                    $generar_puntos = false; // No genera puntos este tipo de compra
+                }
                 $nuevo_estado_recompensa = 'usado';
                 $nuevo_monto_recompensa = 0;
             }

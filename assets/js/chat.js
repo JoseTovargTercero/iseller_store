@@ -301,7 +301,7 @@ class ChatSystem {
         const orderId = document.getElementById('chat-order-select')?.value || null;
         
         if (!categoryId || !asunto || !mensaje) {
-            alert('Por favor completa todos los campos requeridos');
+            Notiflix.Notify.warning('Por favor completa todos los campos requeridos');
             return;
         }
         
@@ -361,7 +361,7 @@ class ChatSystem {
             }
         } catch (error) {
             console.error('Error creating conversation:', error);
-            alert('Error al crear conversación');
+            Notiflix.Notify.failure('Error al crear conversación');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Iniciar Conversación';
@@ -493,7 +493,7 @@ class ChatSystem {
             }
         } catch (error) {
             console.error('Error sending message:', error);
-            alert('Error al enviar mensaje');
+            Notiflix.Notify.failure('Error al enviar mensaje');
         } finally {
             sendBtn.disabled = false;
         }

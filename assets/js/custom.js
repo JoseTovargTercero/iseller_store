@@ -1154,15 +1154,15 @@ function init_autosize() {
 /* INPUTS */
 
 function onAddTag(tag) {
-  alert("Added a tag: " + tag);
+  Notiflix.Notify.success("Added a tag: " + tag);
 }
 
 function onRemoveTag(tag) {
-  alert("Removed a tag: " + tag);
+  Notiflix.Notify.info("Removed a tag: " + tag);
 }
 
 function onChangeTag(input, tag) {
-  alert("Changed a tag: " + tag);
+  Notiflix.Notify.info("Changed a tag: " + tag);
 }
 
 //tags input
@@ -1537,7 +1537,7 @@ function init_cropper() {
             .cropper("replace", blobURL);
           $inputImage.val("");
         } else {
-          window.alert("Please choose an image file.");
+          Notiflix.Notify.warning("Please choose an image file.");
         }
       }
     });
@@ -2143,7 +2143,7 @@ function init_CustomNotification() {
       "</p></div>";
 
     if (!document.getElementById("custom_notifications")) {
-      alert("doesnt exists");
+      Notiflix.Notify.failure("doesnt exists");
     } else {
       $("#custom_notifications ul.notifications").append(
         "<li><a id='ntlink" +

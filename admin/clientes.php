@@ -16,6 +16,8 @@ requireAdminLogin();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/admin.css">
+    <!-- Notiflix -->
+    <link rel="stylesheet" href="../assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-3.2.7.min.css" />
     <meta name="csrf-token" content="<?php echo getCSRFToken(); ?>">
 </head>
 <body>
@@ -70,6 +72,8 @@ requireAdminLogin();
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Notiflix JS -->
+    <script src="../assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-3.2.7.min.js"></script>
     <!-- Add this to load common logout handling if not in a separate js -->
     <script src="assets/js/app.js"></script>
     <script>
@@ -144,20 +148,30 @@ requireAdminLogin();
 
         async function updateStatus(id, newStatus) {
             const action = newStatus === 0 ? 'banear' : 'activar';
-            if (!confirm(`¿Estás seguro de que deseas ${action} a este cliente?`)) return;
-
-            try {
-                const res = await fetch('api/update_customer_status.php', {
-                    method: 'POST',
-                    body: JSON.stringify({ id, estado: newStatus })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    loadCustomers(document.getElementById('searchCustomer').value);
+            
+            Notiflix.Confirm.show(
+                'Confirmar Acción',
+                `¿Estás seguro de que deseas ${action} a este cliente?`,
+                'Sí, continuar',
+                'Cancelar',
+                async () => {
+                    try {
+                        const res = await fetch('api/update_customer_status.php', {
+                            method: 'POST',
+                            body: JSON.stringify({ id, estado: newStatus })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            Notiflix.Notify.success('Estado actualizado correctamente');
+                            loadCustomers(document.getElementById('searchCustomer').value);
+                        } else {
+                            Notiflix.Notify.failure(data.message || 'Error al actualizar estado');
+                        }
+                    } catch (e) {
+                        Notiflix.Notify.failure('Error de conexión al servidor');
+                    }
                 }
-            } catch (e) {
-                alert('Error al actualizar estado');
-            }
+            );
         }
 
         async function viewDetails(id) {

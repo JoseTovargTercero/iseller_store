@@ -19,6 +19,8 @@ requireAdminLogin();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Notiflix -->
+    <link rel="stylesheet" href="../assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-3.2.7.min.css" />
     <meta name="csrf-token" content="<?php echo getCSRFToken(); ?>">
     
     <style>
@@ -415,6 +417,7 @@ requireAdminLogin();
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-3.2.7.min.js"></script>
     <script src="assets/js/app.js"></script>
     
     <script>
@@ -646,11 +649,11 @@ requireAdminLogin();
                     input.value = '';
                     await cargarMensajes(conversacionActiva.id);
                 } else {
-                    alert(data.message || 'Error al enviar mensaje');
+                    Notiflix.Notify.failure(data.message || 'Error al enviar mensaje');
                 }
             } catch (error) {
                 console.error('Error enviando mensaje:', error);
-                alert('Error al enviar mensaje');
+                Notiflix.Notify.failure('Error al enviar mensaje');
             } finally {
                 input.disabled = false;
                 btn.disabled = false;

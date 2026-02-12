@@ -332,23 +332,29 @@ window.confirmReject = async () => {
 }
 
 window.deleteOrder = async (id) => {
-    if (!confirm('¿Realmente quieres eliminar esta orden del historial? Esta acción no se puede deshacer.')) return;
-
-    try {
-        const res = await fetch('api/delete_order.php', {
-            method: 'POST', body: JSON.stringify({ id })
-        });
-        const data = await res.json();
-        if (data.success) {
-            showToast("Orden eliminada", "success");
-            loadOrders();
-            loadStats();
-        } else {
-            showToast(data.message, "error");
+    Notiflix.Confirm.show(
+        'Eliminar Orden',
+        '¿Realmente quieres eliminar esta orden del historial? Esta acción no se puede deshacer.',
+        'Sí, eliminar',
+        'Cancelar',
+        async () => {
+            try {
+                const res = await fetch('api/delete_order.php', {
+                    method: 'POST', body: JSON.stringify({ id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast("Orden eliminada", "success");
+                    loadOrders();
+                    loadStats();
+                } else {
+                    showToast(data.message, "error");
+                }
+            } catch (e) {
+                showToast("Error deleting", "error");
+            }
         }
-    } catch (e) {
-        showToast("Error deleting", "error");
-    }
+    );
 }
 
 let mapInstance = null;

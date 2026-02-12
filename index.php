@@ -279,7 +279,6 @@ registrarVisita($conexion_store);
 }
   /* Custom Modal Styles */
   .modal-content {
-      border-radius: 1.25rem;
       border: none;
   }
   .modal-xl-custom {
@@ -315,10 +314,41 @@ registrarVisita($conexion_store);
   }
   
   .cart-item {
-      transition: transform 0.2s ease;
+      transition: all 0.2s ease;
+      background: #ffffff;
+      border-radius: var(--radius-md);
+      margin-bottom: 0.75rem !important;
+      padding: 1rem !important;
+      border: 1px solid var(--border-color);
   }
   .cart-item:hover {
-      transform: translateX(5px);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-color);
+  }
+  .cart-item-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+  }
+  .cart-item-price {
+      font-weight: 700;
+      color: var(--primary-color);
+  }
+
+  .btn-checkout {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      border: none;
+      font-weight: 600;
+      padding: 0.8rem;
+      border-radius: var(--radius-md);
+      transition: all 0.3s ease;
+  }
+  .btn-checkout:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(111, 175, 122, 0.3);
+      color: white;
   }
 
   .reward-text{
@@ -508,7 +538,8 @@ registrarVisita($conexion_store);
                             <li><h6 class="dropdown-header"><?php echo htmlspecialchars(getUserName()); ?></h6></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="perfil.php"><i class="bi bi-person-circle me-2"></i> Mi Perfil</a></li>
-                            <li><a class="dropdown-item" href="checkout.php"><i class="bi bi-cart-check me-2"></i> Checkout</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSavedCarts()"><i class="bi bi-folder-check me-2"></i> Cargar Carrito</a></li>
+                            <li><a class="dropdown-item text-success fw-bold" href="iseller_store.apk" download><i class="bi bi-android2 me-2"></i> Descargar App</a></li>
                             <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
                         </ul>
                     <?php else: ?>
@@ -558,12 +589,19 @@ registrarVisita($conexion_store);
         <div class="hero-bg" id="hero-bg"></div>
         <div class="hero-overlay" id="hero-overlay"></div>
         <div class="hero-content py-3">
-            <h1 class="hero-title text-white" id="hero-text"> ¡Compras gratis! Cada 5 niveles obtén $5 para tus compras. </h1>
+            <h1 class="hero-title text-white" id="hero-text"> ¡Compras gratis! Cada 5 niveles obtén $5 para gastar en los productos que desees. </h1>
             <p class="lead mb-4 text-white">Contamos con tienda fisica. <a data-bs-toggle="modal" data-bs-target="#modalUbicacion" class="text-white pointer">Consulta nuestra ubicación</a></p>
 
-            <button class="btn rounded-pill px-4 py-2 text-white shadow-sm" style="background-color: rgb(111, 175, 122); border: none;" data-bs-toggle="modal" data-bs-target="#modalBeneficios">
-                <i class="bi bi-star-fill me-2"></i> Ver Beneficios
-            </button>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <button class="btn rounded-pill px-4 py-2 text-white shadow-sm" style="background-color: rgb(111, 175, 122); border: none;" data-bs-toggle="modal" data-bs-target="#modalBeneficios">
+                    <i class="bi bi-star-fill me-2"></i> Ver Beneficios
+                </button>
+
+                <a href="iseller_store.apk" download class="btn btn-dark rounded-pill px-4 py-2 shadow-lg scale-hover" style="background: linear-gradient(135deg, #2D3436 0%, #000000 100%); border: none;">
+                    <i class="bi bi-android2 me-2 text-success"></i>
+                    <span class="text-white">Descargar App</span>
+                </a>
+            </div>
 
 
 
@@ -693,7 +731,7 @@ registrarVisita($conexion_store);
                     <div class="row g-4">
                         <div class="col-12 text-center mb-3">
                             <h5 class="fw-bold text-success"><i class="bi bi-trophy me-2"></i>1. Tu fidelidad tiene recompensa</h5>
-                            <p class="text-muted">Cada compra suma puntos. Acumula, sube de nivel y desbloquea descuentos permanentes.</p>
+                            <p class="text-muted">Cada compra suma puntos. Sube de nivel y desbloquea descuentos permanentes.</p>
                         </div>
                         <div class="col-md-6">
                             <h6 class="fw-bold text-dark"><i class="bi bi-calendar-event me-2"></i>2. Descuentos de Fin de Semana</h6>
@@ -826,7 +864,7 @@ registrarVisita($conexion_store);
                     <div id="cart-items" class="p-3" style="max-height: 400px; overflow-y: auto;">
                         <!-- Items inserted via JS -->
                         <div class="empty-state">
-                            <i class="bi bi-cart-x"></i>
+                            <i class="bi bi-cart-x text-white"></i>
                             <p>Tu carrito está vacío</p>
                     </div>
                     </div>
@@ -838,15 +876,62 @@ registrarVisita($conexion_store);
                                 <div class="small text-muted"><span id="cart-total-bs">Bs 0.00</span></div>
                             </div>
                         </div>
-                        <div class="d-grid gap-2">
-                            <a href="checkout.php" class="btn btn-primary btn-lg">
-                                Ir a Pagar <i class="bi bi-arrow-right ms-2"></i>
+                        <div class="d-grid gap-3">
+                            <a href="checkout.php" class="btn btn-checkout btn-lg shadow-sm">
+                                Finalizar Compra <i class="bi bi-cart-check-fill ms-2"></i>
                             </a>
-                            <button class="btn btn-outline-danger btn-sm border-0" onclick="vaciarCarritoJs()">
-                                Vaciar Carrito
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-success btn-sm flex-grow-1 py-2 rounded-3" onclick="saveCartPrompt()">
+                                    <i class="bi bi-cloud-arrow-up me-1"></i> Guardar Carrito
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm flex-grow-1 py-2 rounded-3" onclick="vaciarCarritoJs()">
+                                    <i class="bi bi-trash me-1"></i> Vaciar
+                                </button>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Guardar Carrito -->
+    <div class="modal fade" id="modalGuardarCarrito" tabindex="-1" aria-hidden="true" style="backdrop-filter: blur(5px);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold text-white"><i class="bi bi-save2-fill me-2"></i> Guardar Mi Carrito</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-4">Dale un nombre a este carrito para que puedas cargarlo cuando quieras.</p>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control rounded-3" id="saved_cart_name" placeholder="Ej: Compras del mes">
+                        <label for="saved_cart_name">Nombre del carrito</label>
+                    </div>
+                    <button type="button" class="btn btn-success w-100 py-3 fw-bold rounded-3 shadow-sm" onclick="confirmSaveCart()">
+                        <i class="bi bi-check-circle-fill me-2"></i> Guardar Ahora
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Listar Carritos -->
+    <div class="modal fade" id="modalListarCarts" tabindex="-1" aria-hidden="true" style="backdrop-filter: blur(5px);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold text-white"><i class="bi bi-folder-check me-2"></i> Mis Carritos Guardados</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="saved-carts-list" class="list-group list-group-flush overflow-auto" style="max-height: 450px;">
+                        <!-- List via JS -->
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none w-100" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -1153,11 +1238,9 @@ registrarVisita($conexion_store);
          */
         // Slider de Texto
         const heroTexts = [
-            "¡Compra y gana! Acumula puntos y desbloquea descuentos",
-        "¿Necesitas hacerle el mercado a un familiar? Agrega su dirección y lo llevamos directo a su puerta",
-            "Fines de Semana de Ahorro: ofertas exclusivas",
-            "Sube de Nivel: gana recompensas en efectivo",
-            "Tu mercado en casa o en tienda: delivery confiable"
+            "¡Compra y gana! Acumula puntos y desbloquea descuentos exclusivos.",
+            "¡Hazle el mercado a un familiar! Agrega su dirección y nosotros nos encargamos del resto.",
+            "Sube de nivel y gana: cada 5 niveles recibe recompensas en efectivo para tus compras.",
         ];
         let heroTextIndex = 0;
         const heroTextElement = document.getElementById('hero-text');
@@ -1792,7 +1875,7 @@ registrarVisita($conexion_store);
             if (cantidad_scann != null) cant = parseFloat(cantidad_scann);
 
             if (isNaN(cant) || cant <= 0) {
-                alert('Cantidad inválida. Debe ser un número mayor a 0.');
+                Notiflix.Notify.warning('Cantidad inválida. Debe ser un número mayor a 0.');
                 return;
             }
 
@@ -1851,17 +1934,17 @@ registrarVisita($conexion_store);
                     let subtotalDolar = element.price * element.qty;
 
                     html += `
-                        <div class="cart-item mb-3 pb-3 border-bottom">
+                        <div class="cart-item">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="flex-grow-1">
-                                    <h6 class="mb-1 small">${element.name}</h6>
-                                    <div class="text-muted small">Cantidad: ${element.qty}</div>
-                                    <div class="small">
-                                        <span class="text-success">$${formatNumber(recortarADosDecimales(subtotalDolar))}</span>
+                                    <div class="cart-item-title mb-1">${element.name}</div>
+                                    <div class="text-muted small mb-1">
+                                        <span class="badge bg-light text-dark fw-normal">Cant: ${element.qty}</span>
                                     </div>
+                                    <div class="cart-item-price">$${formatNumber(recortarADosDecimales(subtotalDolar))}</div>
                                 </div>
-                                <button class="btn btn-sm btn-outline-danger" onclick="quitarProductoJs('${element.id}')">
-                                    <i class="bi bi-trash"></i>
+                                <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" style="width: 32px; height: 32px;" onclick="quitarProductoJs('${element.id}')">
+                                    <i class="bi bi-x-lg"></i>
                                 </button>
                             </div>
                         </div>
@@ -1883,8 +1966,22 @@ registrarVisita($conexion_store);
                 cartCount.text(items.length);
                 cartCountMobile.text(items.length);
             } else {
-                cartItems.html('<p class="text-muted text-center mb-0">El carrito está vacío</p>');
-                cartItemsMobile.html('<p class="text-muted text-center mb-0">El carrito está vacío</p>');
+                const emptyHtml = `
+                    <div class="text-center py-5 animate-fade-in">
+                        <div class="mb-4">
+                            <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 90px; height: 90px;">
+                                <i class="bi bi-cart-x text-white" style="font-size: 2.5rem;"></i>
+                            </div>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-2">Tu carrito está vacío</h5>
+                        <p class="text-muted small mb-4 px-4">¡Aún no has agregado nada! Explora nuestro catálogo y encuentra lo que necesitas.</p>
+                        <button class="btn btn-success-gradient rounded-pill px-5 py-2 fw-bold shadow-sm" data-bs-dismiss="modal">
+                            Explorar Catálogo
+                        </button>
+                    </div>
+                `;
+                cartItems.html(emptyHtml);
+                cartItemsMobile.html(emptyHtml);
                 cartFooter.addClass('hide');
                 cartFooterMobile.addClass('hide');
                 cartCount.text('0');
@@ -1899,12 +1996,19 @@ registrarVisita($conexion_store);
         }
 
         async function vaciarCarritoJs() {
-            if (confirm('¿Estás seguro de que deseas vaciar el carrito?')) {
-                carritoActivo = {};
-                await db.carritoActivo.clear();
-                await db.cart_meta.delete('last_updated');
-                actualizarCarritoJs();
-            }
+            Notiflix.Confirm.show(
+                'Vaciar Carrito',
+                '¿Estás seguro de que deseas vaciar el carrito?',
+                'Sí, vaciar',
+                'Cancelar',
+                async () => {
+                    carritoActivo = {};
+                    await db.carritoActivo.clear();
+                    await db.cart_meta.delete('last_updated');
+                    actualizarCarritoJs();
+                    Notiflix.Notify.success('Carrito vaciado');
+                }
+            );
         }
 
         // ======================
@@ -2013,21 +2117,21 @@ registrarVisita($conexion_store);
                             response = JSON.parse(text);
                         } catch (e) {
                             console.error('Error al parsear JSON:', e);
-                            alert('Respuesta no válida del servidor.');
+                            Notiflix.Notify.failure('Respuesta no válida del servidor.');
                             return;
                         }
 
                         if (response.status) {
-                            alert('Venta procesada correctamente.');
+                            Notiflix.Notify.success('Venta procesada correctamente.');
                             await db.carritosVenta.clear();
                             actualizarCarritoJs();
                         } else {
-                            alert(response.data || 'Error en la respuesta del servidor.');
+                            Notiflix.Notify.failure(response.data || 'Error en la respuesta del servidor.');
                         }
                     })
                     .catch((error) => {
                         console.error('Error en fetch:', error);
-                        alert('Error al enviar los pedidos. Intente nuevamente.');
+                        Notiflix.Notify.failure('Error al enviar los pedidos. Intente nuevamente.');
                     });
         }
 
@@ -2056,6 +2160,169 @@ registrarVisita($conexion_store);
                 console.error(`Error obteniendo todos los registros de ${storeName}`, error);
                 return [];
             }
+        }
+
+        // --- FUNCIONES CARRITO GUARDADO ---
+        function saveCartPrompt() {
+            if (Object.keys(carritoActivo).length === 0) {
+                Notiflix.Notify.warning('El carrito está vacío');
+                return;
+            }
+            // Ocultar modal carrito antes de mostrar el de guardar
+            bootstrap.Modal.getInstance(document.getElementById('modalCarrito')).hide();
+            
+            document.getElementById('saved_cart_name').value = '';
+            const modal = new bootstrap.Modal(document.getElementById('modalGuardarCarrito'));
+            modal.show();
+        }
+
+        async function confirmSaveCart() {
+            const nameInput = document.getElementById('saved_cart_name');
+            const name = nameInput.value;
+            if (!name) {
+                Notiflix.Notify.warning('Por favor ingresa un nombre');
+                return;
+            }
+
+            Notiflix.Loading.pulse('Guardando carrito...');
+            
+            try {
+                const response = await fetch('api/save_cart.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        name: name,
+                        content: JSON.stringify(carritoActivo)
+                    })
+                });
+                
+                const data = await response.json();
+                Notiflix.Loading.remove();
+                
+                if (data.success) {
+                    Notiflix.Notify.success(data.message);
+                    bootstrap.Modal.getInstance(document.getElementById('modalGuardarCarrito')).hide();
+                } else {
+                    Notiflix.Notify.failure(data.message);
+                }
+            } catch (error) {
+                Notiflix.Loading.remove();
+                Notiflix.Notify.failure('Error de comunicación');
+            }
+        }
+
+        async function loadSavedCarts() {
+            if (document.body.dataset.userLoggedIn !== 'true') {
+                Notiflix.Notify.warning('Debes iniciar sesión para ver tus carritos guardados');
+                return;
+            }
+
+            Notiflix.Loading.standard('Cargando tus carritos...');
+            
+            try {
+                const response = await fetch('api/get_saved_carts.php');
+                const data = await response.json();
+                Notiflix.Loading.remove();
+                
+                if (data.success) {
+                    const list = document.getElementById('saved-carts-list');
+                    list.innerHTML = '';
+                    
+                    if (data.carts.length === 0) {
+                        list.innerHTML = '<div class="p-5 text-center text-muted"><i class="bi bi-folder2-open d-block fs-1 mb-2 opacity-25"></i> No tienes carritos guardados</div>';
+                    } else {
+                        data.carts.forEach(cart => {
+                            list.innerHTML += `
+                                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3 border-0 border-bottom">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1 fw-bold text-dark">${cart.name}</h6>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-light text-muted fw-normal"><i class="bi bi-calendar3 me-1"></i> ${new Date(cart.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-success btn-sm rounded-pill px-4 shadow-sm" onclick="selectSavedCart(${cart.id})">
+                                        Cargar
+                                    </button>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('modalListarCarts'));
+                    modal.show();
+                } else {
+                    Notiflix.Notify.failure(data.message);
+                }
+            } catch (error) {
+                Notiflix.Loading.remove();
+                Notiflix.Notify.failure('Error de comunicación');
+            }
+        }
+
+        async function selectSavedCart(id) {
+            Notiflix.Confirm.show(
+                'Cargar Carrito',
+                '¿Deseas cargar este carrito? El carrito actual se vaciará.',
+                'Sí, cargar',
+                'Cancelar',
+                async () => {
+                    Notiflix.Loading.standard('Verificando disponibilidad...');
+                    try {
+                        const response = await fetch(`api/load_saved_cart.php?id=${id}`);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Vaciar carrito actual
+                            carritoActivo = {};
+                            await db.carritoActivo.clear();
+                            
+                            const items = data.content;
+                            let loadedCount = 0;
+                            let outOfStockCount = 0;
+
+                            for (const pid in items) {
+                                const item = items[pid];
+                                const disponible = await verificarStock(item.id, item.qty);
+                                
+                                if (disponible.result) {
+                                    // Agregar a carrito activo
+                                    // Nota: necesitamos tener el producto en productos_por_id para que addtocarJS funcione plenamente
+                                    // pero como estamos cargando un carrito guardado, ya tenemos los datos básicos.
+                                    // Sin embargo, es mejor asegurar que productos_por_id tenga el item o cargarlo.
+                                    // Para simplificar, si el producto existe en el guardado, lo metemos directo a IndexedDB
+                                    // y actualizamos la variable global.
+                                    
+                                    carritoActivo[item.id] = item;
+                                    await db.carritoActivo.put(item);
+                                    loadedCount++;
+                                } else {
+                                    outOfStockCount++;
+                                }
+                            }
+                            
+                            actualizarCarritoJs();
+                            bootstrap.Modal.getInstance(document.getElementById('modalListarCarts')).hide();
+                            Notiflix.Loading.remove();
+                            
+                            if (outOfStockCount > 0) {
+                                Notiflix.Report.info(
+                                    'Carga Completada',
+                                    `Se cargaron ${loadedCount} productos. ${outOfStockCount} productos no estaban disponibles y no se agregaron.`,
+                                    'Entendido'
+                                );
+                            } else {
+                                Notiflix.Notify.success('Carrito cargado correctamente');
+                            }
+                        } else {
+                            Notiflix.Loading.remove();
+                            Notiflix.Notify.failure(data.message);
+                        }
+                    } catch (error) {
+                        Notiflix.Loading.remove();
+                        Notiflix.Notify.failure('Error de comunicación');
+                    }
+                }
+            );
         }
     </script>
 
