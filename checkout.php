@@ -26,6 +26,10 @@ if (@$getUserLevel) {
     $puntosUsuario = $getUserLevel[1];
 }
 
+$nombreCompleto = htmlspecialchars(getUserName());
+$primerNombre = explode(" ", $nombreCompleto)[0];
+$primerNombre = ucfirst(strtolower($primerNombre));
+
 /**
  * Envía una notificación por correo a la administración sobre una nueva compra
  */
@@ -924,7 +928,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        <h5 class="mb-3 fw-bold">Reportar Pago</h5>
                            <div class="mb-3">
                                <label class="form-label small text-muted fw-bold">NÚMERO DE REFERENCIA *</label>
-                               <input type="text" id="payment-ref" class="form-control">
+                               <input type="number" id="payment-ref" class="form-control">
                            </div>
                            <div class="mb-3">
                                <label class="form-label small text-muted fw-bold">FECHA Y HORA *</label>
@@ -947,7 +951,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
                 <h3 class="fw-bold">¡Pedido Realizado!</h3>
-                <p class="text-muted">Gracias por tu compra. Tu orden ha sido recibida correctamente.</p>
+                <p class="text-muted" style="width: 60%; margin: auto;"><b><?php echo $primerNombre; ?></b>, tu orden ha sido recibida correctamente y ya estamos procesándola. En breve recibirás una notificación con el estado de tu pedido y los detalles de la entrega.</p>
                 <div class="alert alert-light border d-inline-block px-4 py-2 my-3">
                     Orden ID: <strong id="success-order-id" class="text-success">---</strong>
                 </div>
@@ -1422,7 +1426,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             })
             .then(async res => {
                 const text = await res.text();
-          //      console.log('Respuesta cruda del backend:', text);
 
                 try {
                     return JSON.parse(text);
