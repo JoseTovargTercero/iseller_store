@@ -198,7 +198,7 @@ $countSql = "
 SELECT COUNT(*) total
 FROM productos p
 INNER JOIN stock s ON p.id = s.id_producto
-WHERE p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ? AND p.origen != 'c'
+WHERE p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ? AND s.stock > 0 AND p.origen != 'c'
 ";
 
 $countStmt = $conexion->prepare($countSql);

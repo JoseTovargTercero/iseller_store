@@ -1391,6 +1391,9 @@ registrarVisita($conexion_store);
         });
 
         function showSkeletons() {
+            if (productsGrid.children.length > 0 && !isLoading && currentPage > 1) return;
+            if (currentPage === 1 && productsGrid.querySelector('.product-item')) return;
+            
             let skeletons = '';
             for (let i = 0; i < 24; i++) {
                 skeletons += `
@@ -1761,8 +1764,10 @@ registrarVisita($conexion_store);
         (async function cargarCarritoInicial() {
             await checkCartExpiration();
             
-            // Ensure skeletons are shown while loading initial products
-            showSkeletons();
+            // Show skeletons ONLY if grid is empty to avoid race condition
+            if (productsGrid.children.length === 0) {
+                showSkeletons();
+            }
             
             const items = await db.carritoActivo.toArray();
             carritoActivo = items.reduce((obj, item) => {
@@ -1770,7 +1775,11 @@ registrarVisita($conexion_store);
                 return obj;
             }, {});
             actualizarCarritoJs();
-            cargarMasProductos();
+            
+            // Trigger load if not already loading
+            if (!isLoading) {
+                cargarMasProductos();
+            }
         })();
 
         async function actualizarCarritoActivo() {
