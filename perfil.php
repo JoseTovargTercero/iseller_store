@@ -875,6 +875,10 @@ $userName = getUserName();
     };
 
     container.innerHTML = orders.map(o => {
+        const localStatusMap = statusMap.map(s => ({
+            ...s,
+            label: (s.key === 'enviada' && o.tipo_entrega !== 'delivery') ? 'Confirmada' : s.label
+        }));
 
         const totalBase = parseFloat(o.valor_compra) + parseFloat(o.importe_envio || 0);
         let totalFinal = totalBase;
@@ -887,14 +891,14 @@ $userName = getUserName();
             descuentoHTML = `<span class="badge bg-success mt-1"><i class="bi bi-gift"></i> Descuento: $${parseFloat(o.ahorrado).toFixed(2)}</span>`;
         }
 
-        const currentIndex = statusMap.findIndex(s => s.key === o.estado);
+        const currentIndex = localStatusMap.findIndex(s => s.key === o.estado);
         const progressWidth = currentIndex >= 0 ? (currentIndex * 25) + '%' : '0%';
         const opacity = o.estado === 'entregada' ? 'opacity: 0.5;' : '';
 
         const timelineHTML = `
             <div class="order-timeline mb-3">
                 <div class="timeline-progress" style="width: ${progressWidth}"></div>
-                ${statusMap.map((s, i) => `
+                ${localStatusMap.map((s, i) => `
                     <div class="timeline-step ${i <= currentIndex ? 'active' : ''}">
                         <span class="dot"></span>
                         <small>${s.label}</small>
@@ -917,7 +921,7 @@ $userName = getUserName();
                 </div>
 
                 <span class="badge rounded-pill bg-${statusColors[o.estado]} px-3 py-2">
-                    ${statusMap.find(s => s.key === o.estado)?.label || o.estado}
+                    ${localStatusMap.find(s => s.key === o.estado)?.label || o.estado}
                 </span>
             </div>
             <!-- BODY -->
