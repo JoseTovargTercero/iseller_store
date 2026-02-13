@@ -36,9 +36,10 @@ try {
     ========================= */
 
     $stmt = $conexion_store->prepare("
-        SELECT estado, compra_id, usuario_id,valor_compra
-        FROM compras_por_usuarios
-        WHERE id = ?
+        SELECT c.estado, c.compra_id, c.usuario_id, c.valor_compra, u.nombre, u.email
+        FROM compras_por_usuarios c
+        JOIN usuarios u ON c.usuario_id = u.id
+        WHERE c.id = ?
         FOR UPDATE
     ");
     $stmt->bind_param("i", $id);
@@ -53,6 +54,8 @@ try {
     $compra_id = $row['compra_id'];
     $user_id   = $row['usuario_id'];
     $valor     = $row['valor_compra'];
+    $user_name = $row['nombre'];
+    $user_email = $row['email'];
 
     /* =========================
        VALIDAR FLUJO
@@ -354,6 +357,9 @@ try {
     $conexion->commit();        // inventario
     $conexion_store->commit();  // ecommerce
 
+    // Enviar notificación por correo
+    enviarCorreoEstado($user_email, $user_name, $id, $newStatus);
+
     echo json_encode(['success' => true]);
 
 } catch (Exception $e) {
@@ -365,4 +371,76 @@ try {
         'success' => false,
         'message' => $e->getMessage()
     ]);
+}
+
+/**
+ * Envía un correo profesional al usuario informando el cambio de estado de su pedido
+ */
+function enviarCorreoEstado($to, $nombre, $orden_id, $nuevo_estado) {
+    if (!$to) return;
+
+    $subject = "Actualización de tu pedido #$orden_id - iSeller Store";
+    $from = 'pedidos@iseller-tiendas.com';
+    
+    $estados = [
+        'pendiente' => 'Pendiente',
+        'en_revision' => 'En revisión',
+        'enviada' => 'Enviada / Confirmada',
+        'entregada' => 'Entregada'
+    ];
+    
+    $estado_label = $estados[$nuevo_estado] ?? ucfirst($nuevo_estado);
+
+    $message = "
+    <html>
+    <head>
+        <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; }
+            .header { background-color: #6fb07f; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { padding: 30px; background-color: #fff; }
+            .status-box { background-color: #f8f9fa; border-left: 5px solid #6fb07f; padding: 15px; margin: 20px 0; font-weight: bold; font-size: 1.1em; }
+            .footer { text-align: center; padding: 20px; font-size: 0.9em; color: #777; }
+            .btn { display: inline-block; padding: 12px 25px; background-color: #6fb07f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1 style='margin:0;'>iSeller Store</h1>
+            </div>
+            <div class='content'>
+                <p>Hola, <strong>$nombre</strong>,</p>
+                <p>Queremos informarte que el estado de tu pedido <strong>#$orden_id</strong> ha sido actualizado.</p>
+                
+                <div class='status-box'>
+                    🔔 Estado actual: $estado_label
+                </div>
+                
+                <p>Puedes consultar todos los detalles de tu compra, el progreso de la entrega y el historial de tu pedido desde nuestra aplicación o sitio web.</p>
+                
+                <div style='text-align: center;'>
+                    <a href='https://iseller-tiendas.com/perfil.php' class='btn'>Ver mi pedido</a>
+                </div>
+                
+                <p>Gracias por confiar en <strong>iSeller Store</strong>.<br>
+                Seguimos trabajando para brindarte la mejor experiencia de compra.</p>
+            </div>
+            <div class='footer'>
+                <p>Atentamente,<br>
+                <strong>Equipo iSeller Store</strong><br>
+                <a href='https://iseller-tiendas.com' style='color: #6fb07f;'>https://iseller-tiendas.com</a></p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+
+    $headers = "MIME-Version: 1.0" . "\r\n";
+    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+    $headers .= "From: iSeller Store <$from>" . "\r\n";
+    $headers .= "Reply-To: $from" . "\r\n";
+    $headers .= "X-Mailer: PHP/" . phpversion();
+
+    @mail($to, $subject, $message, $headers);
 }

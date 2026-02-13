@@ -538,6 +538,7 @@ registrarVisita($conexion_store);
                             <li><h6 class="dropdown-header"><?php echo htmlspecialchars(getUserName()); ?></h6></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="perfil.php"><i class="bi bi-person-circle me-2"></i> Mi Perfil</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="shareReferralJS()"><i class="bi bi-share me-2"></i> Compartir Código de referido</a></li>
                             <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSavedCarts()"><i class="bi bi-folder-check me-2"></i> Cargar Carrito</a></li>
                             <li><a class="dropdown-item text-success fw-bold" href="iseller_store.apk" download><i class="bi bi-android2 me-2"></i> Descargar App</a></li>
                             <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
@@ -2363,6 +2364,43 @@ registrarVisita($conexion_store);
                     }
                 }
             );
+        }
+
+        async function shareReferralJS() {
+            try {
+                Notiflix.Loading.standard('Generando enlace...');
+                const res = await fetch('api/perfil_data.php');
+                const data = await res.json();
+                Notiflix.Loading.remove();
+
+                if (!data.success) {
+                    Notiflix.Notify.failure('Error: ' + data.message);
+                    return;
+                }
+
+                const refLink = `${window.location.origin}/iseller_store/?ref=${data.user.referral_code}`;
+                const text = `Hola, te recomiendo comprar en iSeller Store 🛒 Por cada compra obtienes descuentos, acumulas puntos y subes de nivel, cada 5 niveles obtienes 5$ para gastar en la tienda: 👉 ${refLink}`;
+
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Únete a iSeller Store',
+                        text: text,
+                        url: refLink
+                    }).catch(err => {
+                        if (err.name !== 'AbortError') {
+                            console.error('Share failed:', err);
+                        }
+                    });
+                } else {
+                    navigator.clipboard.writeText(text).then(() => {
+                        Notiflix.Notify.success('Enlace de referido copiado al portapapeles');
+                    });
+                }
+            } catch (err) {
+                Notiflix.Loading.remove();
+                console.error('Error sharing referral:', err);
+                Notiflix.Notify.failure('No se pudo compartir el código');
+            }
         }
     </script>
 

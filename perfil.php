@@ -1047,7 +1047,7 @@ $userName = getUserName();
                     <tr>
                         <td>
                             <div class="d-flex align-items-center gap-3">
-                                <img src="assets/img/stock/${item.id}.png" class="rounded" width="50" height="50" style="object-fit: cover;" onerror="this.src='assets/img/no-image.png'"> 
+                                <img src="assets/img/stock/${item.id}.png" class="rounded" width="50" height="50" style="object-fit: cover;" onerror="this.src='assets/img/no-images.png'"> 
                                 <div>
                                     <h6 class="mb-0 small fw-bold">${item.nombre}</h6>
                                 </div>
