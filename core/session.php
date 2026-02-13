@@ -152,6 +152,11 @@ function getUserLevel() {
   $stmt->execute();
   $result = $stmt->get_result();
   $row = $result->fetch_assoc();
+  // si no encuentra el usuario eliminar la sesion
+  if (!$row) {
+    logoutUser();
+    return null;
+  }
   return [$row['nivel'], $row['puntos']];
 }
 

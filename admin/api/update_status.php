@@ -133,7 +133,7 @@ try {
             }
         }
 
-        if ((float)$valor >= 3) {
+        if ((float)$valor >= 2) {
 
             // 1. Validar que sea la PRIMERA compra del usuario
             $stmtCompras = $conexion_store->prepare("
@@ -194,10 +194,15 @@ try {
 
 
                     // Registrar recompensa del referrer en recompensas_usuario
-                    $stmtRecompensa = $conexion_store->prepare("INSERT INTO recompensas_usuario (usuario_id, nivel_desbloqueado, tipo, monto, estado, fecha_creacion, compra_id)
+                    $stmtRecompensa = $conexion_store->prepare("INSERT INTO recompensas_usuario (usuario_id, nivel_desbloqueo, tipo, monto, estado, fecha_creacion, compra_id)
                         VALUES (?, ?, 'referido', 0, 'disponible', NOW(), ?)");
-                    $stmtRecompensa->bind_param("iiii", $referrer_user_id, $user_nivel, $compra_id);
-                    $stmtRecompensa->execute();
+                        if (!$stmtRecompensa) {
+                            throw new Exception('Error al registrar recompensa del referrer' . $conexion_store->error);
+                        }
+                    $stmtRecompensa->bind_param("iii", $referrer_user_id, $user_nivel, $compra_id);
+                    if (!$stmtRecompensa->execute()) {
+                        throw new Exception('Error al registrar recompensa del referrer' . $stmtRecompensa->error);
+                    }
                     $stmtRecompensa->close();
 
 

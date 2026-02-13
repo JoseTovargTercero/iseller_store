@@ -46,73 +46,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Las contraseñas no coinciden.';
     } else {
         // Verificar si el email ya existe
+    
         $stmt = $conexion_store->prepare("SELECT id FROM usuarios WHERE email = ? LIMIT 1");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
         
+     
         if ($result->num_rows > 0) {
             $error = 'Este email ya está registrado. Por favor, inicie sesión.';
         } else {
-            // Hashear la contraseña
-            $password_hash = password_hash($password, PASSWORD_DEFAULT);
-            
-            // Insertar nuevo usuario
-            $stmt = $conexion_store->prepare("INSERT INTO usuarios (nombre, email, password, telefono, estado) VALUES (?, ?, ?, ?, 1)");
-            $stmt->bind_param("ssss", $nombre, $email, $password_hash, $telefono);
-            
-            if ($stmt->execute()) {
-              
-                // Obtener el ID del usuario recién creado
-                $user_id = $conexion_store->insert_id;
-                  // Generar código de referido
-                $referral_code = generateReferralCode($user_id);
-                // actualizar usuarios.referral_code 
-                $stmt = $conexion_store->prepare("UPDATE usuarios SET referral_code = ? WHERE id = ?");
-                $stmt->bind_param("ss", $referral_code, $user_id);
-                $stmt->execute();
 
-                // Iniciar sesión automáticamente
-                $user = [
-                    'id' => $user_id,
-                    'nombre' => $nombre,
-                    'email' => $email
-                ];
-                loginUser($user);
-
-                // Verificar si fue referido
-                $referralCode = $_COOKIE['referral_code'] ?? null;
-
-                if ($referralCode) {
-                    $stmt = $conexion_store->prepare("SELECT id FROM usuarios WHERE referral_code = ? LIMIT 1");
-                    $stmt->bind_param("s", $referralCode);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    if ($result->num_rows > 0) {
-                        $referrer = $result->fetch_assoc();
-                        $referrer_id = $referrer['id'];
-                        // Insertar la referencia
-                        $stmt = $conexion_store->prepare("INSERT INTO referrals (referrer_user_id, referred_user_id, referral_code, status) VALUES (?, ?, ?, 'pending')");
-                        $stmt->bind_param("iii", $referrer_id, $user_id, $referralCode);
-                        $stmt->execute();
+            $conexion_store->begin_transaction();
+            try {
+                // Hashear la contraseña
+                $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                
+                // Insertar nuevo usuario
+                $stmt = $conexion_store->prepare("INSERT INTO usuarios (nombre, email, password, telefono, estado) VALUES (?, ?, ?, ?, 1)");
+                $stmt->bind_param("ssss", $nombre, $email, $password_hash, $telefono);
+                
+                if ($stmt->execute()) {
+                
+                    // Obtener el ID del usuario recién creado
+                    $user_id = $conexion_store->insert_id;
+                    // Generar código de referido
+                    $referral_code = generateReferralCode($user_id);
+                    // actualizar usuarios.referral_code 
+                    $stmt = $conexion_store->prepare("UPDATE usuarios SET referral_code = ? WHERE id = ?");
+                    $stmt->bind_param("ss", $referral_code, $user_id);
+                    if(!$stmt->execute()){
+                        throw new Exception("Error al actualizar el código de referido");
                     }
 
-                    // eliminar cookie
-                    setcookie('referral_code', '', time() - 3600, '/');
+                    // Iniciar sesión automáticamente
+                    $user = [
+                        'id' => $user_id,
+                        'nombre' => $nombre,
+                        'email' => $email
+                    ];
+                    loginUser($user);
 
+                    // Verificar si fue referido
+                    $referralCode = $_COOKIE['referral_code'] ?? null;
+
+                    if ($referralCode) {
+                        $stmt = $conexion_store->prepare("SELECT id FROM usuarios WHERE referral_code = ? LIMIT 1");
+                        $stmt->bind_param("s", $referralCode);
+                        if(!$stmt->execute()){
+                            throw new Exception("Error al buscar el código de referido");
+                        }
+                        $result = $stmt->get_result();
+                        if ($result->num_rows > 0) {
+                            echo 'entro';
+                            $referrer = $result->fetch_assoc();
+                            $referrer_id = $referrer['id'];
+                            // Insertar la referencia
+                            $stmt = $conexion_store->prepare("INSERT INTO referrals (referrer_user_id, referred_user_id, referral_code, status) VALUES (?, ?, ?, 'pending')");
+                            $stmt->bind_param("iis", $referrer_id, $user_id, $referralCode);
+                            if(!$stmt->execute()){
+                                throw new Exception("Error al insertar la referencia " . $stmt->error);
+                            }
+                        }
+
+                        // eliminar cookie
+                        setcookie('referral_code', '', time() - 3600, '/');
+
+                    }
+                    $conexion_store->commit();
+                    $redirect_page = ($cart_exists === '1') ? 'checkout.php' : 'index.php';
+                    redirect($redirect_page);
+                } else {
+                    $error = 'Error al crear la cuenta. Por favor, intente nuevamente.';
+                    $conexion_store->rollback();
                 }
 
-
-
-                // Redirigir según el estado del carrito
-                $redirect_page = ($cart_exists === '1') ? 'checkout.php' : 'index.php';
-                redirect($redirect_page);
-
-            } else {
-                $error = 'Error al crear la cuenta. Por favor, intente nuevamente.';
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $conexion_store->rollback();
             }
-        }
         
+        }
+
+      
         $stmt->close();
     }
 }

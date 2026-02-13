@@ -2121,12 +2121,10 @@ function init_PNotify() {
 /* CUSTOM NOTIFICATION */
 
 function init_CustomNotification() {
-  console.log("run_customtabs");
 
   if (typeof CustomTabs === "undefined") {
     return;
   }
-  console.log("init_CustomTabs");
 
   var cnt = 10;
 
@@ -2258,13 +2256,11 @@ function init_EasyPieChart() {
 }
 
 function init_charts() {
-  console.log("run_charts  typeof [" + typeof Chart + "]");
 
   if (typeof Chart === "undefined") {
     return;
   }
 
-  console.log("init_charts");
 
   Chart.defaults.global.legend = {
     enabled: false,
@@ -2717,7 +2713,6 @@ function init_compose() {
   if (typeof $.fn.slideToggle === "undefined") {
     return;
   }
-  console.log("init_compose");
 
   $("#compose, .compose-close").click(function () {
     $(".compose").slideToggle();
@@ -2839,7 +2834,6 @@ function init_calendar() {
 /* DATA TABLES */
 
 function init_DataTables() {
-  console.log("run_datatables");
 
   if (typeof $.fn.DataTable === "undefined") {
     return;
@@ -3072,7 +3066,6 @@ function init_echarts() {
   if (typeof echarts === "undefined") {
     return;
   }
-  console.log("init_echarts");
 
   var theme = {
     color: [
