@@ -874,6 +874,7 @@ registrarVisita($conexion_store);
                             <div class="text-end line-height-1">
                                 <div class="fs-4 fw-bold text-success"><span id="cart-total-dolar">$0.00</span></div>
                                 <div class="small text-muted"><span id="cart-total-bs">Bs 0.00</span></div>
+                                <div id="cart-points"></div>
                             </div>
                         </div>
                         <div class="d-grid gap-3">
@@ -1022,6 +1023,7 @@ registrarVisita($conexion_store);
         var codigos = [];
 
         const base_url = 'core/';
+        let userRewards = [];
 
         // Initialize UI Elements
         document.addEventListener('DOMContentLoaded', () => {
@@ -1141,6 +1143,8 @@ registrarVisita($conexion_store);
             try {
                 const res = await fetch('api/recompensas.php');
                 const data = await res.json();
+                userRewards = data.rewards || [];
+                actualizarCarritoJs();
                 console.log(data)
                 if(data.success && data.has_rewards) {
                     // Update UI to show rewards available
@@ -1209,7 +1213,8 @@ registrarVisita($conexion_store);
                     mayor: item.m,
                     precio_dolar_visible: item.pd,
                     precio_peso_visible: item.pp,
-                    precio_bs_visible: item.pb
+                    precio_bs_visible: item.pb,
+                    precio_costo: item.pc
                 }));
                 
                 fuse = new Fuse(searchItems, {
@@ -1321,6 +1326,9 @@ registrarVisita($conexion_store);
 
             let html = '<div class="list-group list-group-flush">';
             resultados.slice(0, 8).forEach(item => {
+                // Sincronizar con el cache global para que addtocarJS lo encuentre
+                productos_por_id[item.id] = item;
+                
                 const rest = (item.mayor === '1' ?
                     '<span class="badge bg-success-subtle text-success border border-success-subtle">Mayor</span>' :
                     `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Stock: ${item.stock}</span>`);
@@ -1889,7 +1897,7 @@ registrarVisita($conexion_store);
             }
 
             if(inputCantidad) inputCantidad.value = 1;
-
+            
             if (!productos_por_id[id]) {
                 console.error(`Producto con ID ${id} no encontrado.`);
                 return;
@@ -1911,7 +1919,8 @@ registrarVisita($conexion_store);
                     priceBolivar: parseFloat(bolivarventa_p),
                     qty: cant,
                     mayor: mayor,
-                    cantidadPaca: 1
+                    cantidadPaca: 1,
+                    priceCosto: parseFloat(producto.precio_costo)
                 };
             }
 
@@ -1969,6 +1978,28 @@ registrarVisita($conexion_store);
 
                 $("#cart-total-dolar, .cart-total-dolar-mobile").text(`$${formatNumber(recortarADosDecimales(total_dolares))}`);
                 $("#cart-total-bs, .cart-total-bs-mobile").text(`${formatNumber(recortarADosDecimales(total_bolivares))} Bs`);
+
+                // --- CALCULO DE PUNTOS ---
+                let puntosCalculados = 0;
+                let hasFiveDollarReward = userRewards.some(r => r.tipo === 'monetaria' && parseFloat(r.monto) === 5.00 && r.estado === 'disponible');
+                
+                if (!hasFiveDollarReward) {
+                    let gananciaTotal = 0;
+                    items.forEach(item => {
+                        let costo = item.priceCosto || 0;
+                        if (costo > 0) {
+                            gananciaTotal += (item.price - costo) * item.qty;
+                        }
+                    });
+                    puntosCalculados = Math.min(gananciaTotal, 10);
+                }
+
+                if (puntosCalculados > 0) {
+                    const pointsHtml = `<div class="text-success small fw-bold mt-1 text-center"><i class="bi bi-star-fill me-1"></i> Recibirás ${formatNumber(puntosCalculados)} puntos</div>`;
+                    $("#cart-points, #cart-points-mobile").html(pointsHtml).show();
+                } else {
+                    $("#cart-points, #cart-points-mobile").hide();
+                }
 
                 cartFooter.removeClass('hide');
                 cartFooterMobile.removeClass('hide');

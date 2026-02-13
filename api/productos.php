@@ -120,7 +120,8 @@ if ($mode === 'search_index') {
             'pp' => $precios['precio_venta_peso'],
             'pb' => $precios['precio_venta_bs'],
             'cd' => $precios['dolar_con_recompensa'],
-            'cp' => $precios['bs_con_recompensa']
+            'cp' => $precios['bs_con_recompensa'],
+            'pc' => $precios['precio_dolar_compra']
         ];
     }
     echo json_encode(['recompensas' => $recompensas, 'searchIndex' => $searchIndex]);
@@ -189,6 +190,7 @@ while ($row = $result->fetch_assoc()) {
         'precio_bs_visible' => $precios['precio_venta_bs'],
         'costo_dolar' => $precios['dolar_con_recompensa'],
         'costo_bs' => $precios['bs_con_recompensa'],
+        'precio_costo' => $precios['precio_dolar_compra'],
         'cantidadPaca' => $row['cantidad_unidades'],
         'img' => $img
     ];

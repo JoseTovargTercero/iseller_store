@@ -108,7 +108,8 @@ class CalculadoraPrecios
             'precio_venta_bs' => (float) $precioBsVenta,
             'precio_venta_peso' => (float) $valorPesos,
             'dolar_con_recompensa' => (float) $precioDolarRecompensa,
-            'bs_con_recompensa' => (float) $precioBsRecompensa
+            'bs_con_recompensa' => (float) $precioBsRecompensa,
+            'precio_dolar_compra' => (float) $precioDolarCompra
         ];
     }
 

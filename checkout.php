@@ -21,8 +21,10 @@ $costo_envio_bs = $costo_envio_bs['bs'];
 
 // nivel del usuario
 $getUserLevel = getUserLevel();
-$nivelUsuario = $getUserLevel[0];
-$puntosUsuario = $getUserLevel[1];
+if (@$getUserLevel) {
+    $nivelUsuario = $getUserLevel[0];
+    $puntosUsuario = $getUserLevel[1];
+}
 
 /**
  * Envía una notificación por correo a la administración sobre una nueva compra
