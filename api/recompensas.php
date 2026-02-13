@@ -68,6 +68,17 @@ try {
         'rewards' => $recompensas,
         'init_reward' => $initReward
     ]);
+
+
+
+    // si el usuario tiene disponible alguna recompensa de tipo referido pasala a estado usado
+
+    $stmtUpdate = $conexion_store->prepare("UPDATE recompensas_usuario SET estado = 'usado' WHERE usuario_id = ? AND tipo = 'referido'");
+    $stmtUpdate->bind_param("i", $user_id);
+    $stmtUpdate->execute();
+    $stmtUpdate->close();
+
+
     $conexion_store->commit();
     
 
