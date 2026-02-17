@@ -63,6 +63,28 @@ if (isLoggedIn()) {
 }
 // -----------------------------------
 
+// --- FETCH STORE CONFIGURATION ---
+$store_config = [
+    'horario' => 'Lunes a Sábado: 8:00 AM - 12:30 PM / 3:00 PM - 9:00 PM<br>Domingos: 9:00 AM - 12:30 PM',
+    'horario_delivery' => '8:00 AM - 11:30 AM / 2:00 PM - 6:00 PM',
+    'direccion' => 'Urb Simón Bolívar, Calle principal, diagonal a la 52 brigada - YolaMarket'
+];
+
+$sqlConfig = "SELECT horario_atencion, horario_delivery, direccion FROM tienda_configuracion LIMIT 1";
+$resConfig = $conexion_store->query($sqlConfig);
+if ($resConfig && $rowConfig = $resConfig->fetch_assoc()) {
+    if (!empty($rowConfig['horario_atencion'])) {
+        $store_config['horario'] = $rowConfig['horario_atencion'];
+    }
+    if (!empty($rowConfig['horario_delivery'])) {
+        $store_config['horario_delivery'] = $rowConfig['horario_delivery'];
+    }
+    if (!empty($rowConfig['direccion'])) {
+        $store_config['direccion'] = $rowConfig['direccion'];
+    }
+}
+// ---------------------------------
+
 // Registro de métricas
 require_once('core/metrics.php');
 registrarVisita($conexion_store);
@@ -779,15 +801,22 @@ registrarVisita($conexion_store);
                                 <div class="d-flex align-items-start gap-3 mb-2">
                                     <i class="bi bi-pin-map text-success fs-5"></i>
                                     <div>
-                                        <p class="mb-0 fw-semibold">Dirección (YolaMarket)</p>
-                                        <p class="text-muted small mb-0">Urb Simón Bolívar, Calle principal, diagonal a la 52 brigada - YolaMarket</p>
+                                        <p class="mb-0 fw-semibold">Dirección</p>
+                                        <p class="text-muted small mb-0"><?php echo $store_config['direccion']; ?></p>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-start gap-3 mb-2">
+                                    <i class="bi bi-clock text-success fs-5"></i>
+                                    <div>
+                                        <p class="mb-0 fw-semibold">Horario de Atención (Tienda Física)</p>
+                                        <p class="text-muted small mb-0"><?php echo $store_config['horario']; ?></p>
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-start gap-3">
-                                    <i class="bi bi-clock text-success fs-5"></i>
+                                    <i class="bi bi-truck text-success fs-5"></i>
                                     <div>
-                                        <p class="mb-0 fw-semibold">Horario de Atención</p>
-                                        <p class="text-muted small mb-0">Lunes a Sábado: 8:00 AM - 12:30 PM / 3:00 PM - 9:00 PM<br>Domingos: 9:00 AM - 12:30 PM</p>
+                                        <p class="mb-0 fw-semibold">Horario de Atención (Delivery)</p>
+                                        <p class="text-muted small mb-0"><?php echo $store_config['horario_delivery']; ?></p>
                                     </div>
                                 </div>
                             </div>

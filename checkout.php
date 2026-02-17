@@ -30,6 +30,28 @@ $nombreCompleto = htmlspecialchars(getUserName());
 $primerNombre = explode(" ", $nombreCompleto)[0];
 $primerNombre = ucfirst(strtolower($primerNombre));
 
+// --- FETCH STORE CONFIGURATION ---
+$store_config = [
+    'horario' => 'Lunes a Sábado, 9:00 AM - 9:00 PM',
+    'horario_delivery' => '8:00 AM - 11:30 AM / 2:00 PM - 6:00 PM',
+    'direccion' => 'Urb Simon Bolívar, Av. Principal, Diagonal a la 52 brigada'
+];
+
+$sqlConfig = "SELECT horario_atencion, horario_delivery, direccion FROM tienda_configuracion LIMIT 1";
+$resConfig = $conexion_store->query($sqlConfig);
+if ($resConfig && $rowConfig = $resConfig->fetch_assoc()) {
+    if (!empty($rowConfig['horario_atencion'])) {
+        $store_config['horario'] = $rowConfig['horario_atencion'];
+    }
+    if (!empty($rowConfig['horario_delivery'])) {
+        $store_config['horario_delivery'] = $rowConfig['horario_delivery'];
+    }
+    if (!empty($rowConfig['direccion'])) {
+        $store_config['direccion'] = $rowConfig['direccion'];
+    }
+}
+// ---------------------------------
+
 /**
  * Envía una notificación por correo a la administración sobre una nueva compra
  */
@@ -804,7 +826,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="col-md-6">
                         <div class="card p-3 h-100 cursor-pointer delivery-option" id="opt-pickup" onclick="setDeliveryType('retiro_tienda')">
                             <div class="d-flex align-items-center">
-                                <div class="bg-light text-dark rounded-circle p-2 me-3">
+                                <div class="bg-light text-dark avatar-circle rounded-circle p-2 me-3">
                                     <i class="bi bi-shop fs-4"></i>
                                 </div>
                                 <div>
@@ -836,8 +858,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <h6 class="fw-bold">Información de Retiro</h6>
                             <p class="mb-0 small">Puedes retirar tu pedido en nuestra tienda principal:<br>
-                            <strong>Urb Simon Bolívar, Av. Principal, Diagonal a la 52 brigada</strong><br>
-                            Horario: Lunes a Sábado, 9:00 AM - 9:00 PM</p>
+                            <strong><?php echo $store_config['direccion']; ?></strong><br>
+                            Horario: <?php echo $store_config['horario']; ?></p>
                         </div>
                     </div>
                 </div>
@@ -954,6 +976,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="text-muted" style="width: 60%; margin: auto;"><b><?php echo $primerNombre; ?></b>, tu orden ha sido recibida correctamente y ya estamos procesándola. En breve recibirás una notificación con el estado de tu pedido y los detalles de la entrega.</p>
                 <div class="alert alert-light border d-inline-block px-4 py-2 my-3">
                     Orden ID: <strong id="success-order-id" class="text-success">---</strong>
+                </div>
+                <!-- Mensaje Estimado -->
+                <div id="estimated-time-container" class="mt-3 d-none">
+                    <div class="alert alert-info d-inline-block px-4 py-2">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <span id="estimated-time-msg" class="fw-bold"></span>
+                    </div>
                 </div>
                 <div class="mt-4">
                     <a href="index.php" class="btn btn-primary-custom px-4">Volver a la tienda</a>
@@ -1394,6 +1423,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
         }
 
+        // --- LOGICA MENSAJE ESTIMADO ---
+        function getEstimatedDeliveryMessage(type) {
+            const now = new Date();
+            const day = now.getDay(); // 0: Dom, 1: Lun, ..., 6: Sab
+            const hour = now.getHours();
+            const min = now.getMinutes();
+            const timeVal = hour * 100 + min;
+
+            const isWeekday = (day >= 1 && day <= 5);
+
+            console.log('Hora real JS:', hour + ':' + min, 'timeVal:', timeVal);
+
+            if (type === 'retiro_tienda') {
+                const isWithinPickup = isWeekday && timeVal >= 900 && timeVal < 1900;
+
+                if (!isWithinPickup) {
+                    return "Tu compra estará disponible para retiro en tienda dentro del horario de atención: Lunes a Viernes de 9:00 AM a 7:00 PM.";
+                }
+                return "";
+            }
+
+            if (type === 'delivery') {
+                if (!isWeekday) {
+                    return "Tu pedido será enviado el lunes a partir de las 8:00 AM.";
+                }
+
+                if (timeVal < 800) {
+                    return "Tu pedido será enviado hoy a partir de las 8:00 AM.";
+                }
+
+                if ((timeVal >= 800 && timeVal <= 1130) || (timeVal >= 1400 && timeVal < 1800)) {
+                    return "Tu pedido será enviado en un período aproximado de 20 minutos.";
+                }
+
+                if (timeVal > 1130 && timeVal < 1400) {
+                    return "Tu pedido será enviado hoy a partir de las 2:00 PM.";
+                }
+
+                return day === 5
+                    ? "Tu pedido será enviado el lunes a partir de las 8:00 AM."
+                    : "Tu pedido será enviado mañana a partir de las 8:00 AM.";
+            }
+
+            return "";
+        }
+
         // --- FINALIZAR COMPRA ---
         function finalizarCompra() {
             // Validacion de Pago
@@ -1439,6 +1514,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     await db.cart_meta.delete('last_updated');
                     
                     document.getElementById('success-order-id').textContent = data.orden_id;
+                    
+                    // Mostrar mensaje estimado
+                    const msg = getEstimatedDeliveryMessage(deliveryType);
+                    if (msg) {
+                        document.getElementById('estimated-time-msg').textContent = msg;
+                        document.getElementById('estimated-time-container').classList.remove('d-none');
+                    } else {
+                        document.getElementById('estimated-time-container').classList.add('d-none');
+                    }
                     
                     // Mostrar información de puntos si está disponible
                  if (data.puntos_ganados !== undefined) {
