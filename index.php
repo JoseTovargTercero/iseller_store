@@ -2407,7 +2407,7 @@ registrarVisita($conexion_store);
                     return;
                 }
 
-                const refLink = `${window.location.origin}/iseller_store/?ref=${data.user.referral_code}`;
+                const refLink = `${window.location.origin}/?ref=${data.user.referral_code}`;
                 const text = `Hola, te recomiendo comprar en iSeller Store 🛒 Por cada compra obtienes descuentos, acumulas puntos y subes de nivel, cada 5 niveles obtienes 5$ para gastar en la tienda: 👉 ${refLink}`;
 
                 if (navigator.share) {

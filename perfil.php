@@ -717,7 +717,7 @@ $userName = getUserName();
 
                 // Update Referral
                 const refCode = data.user.referral_code;
-                const refLink = `${window.location.origin}/iseller_store/?ref=${refCode}`;
+                const refLink = `${window.location.origin}/?ref=${refCode}`;
                 
                 document.getElementById('ref-code-display').textContent = refLink;
                 document.getElementById('ref-link-input').value = refLink;
