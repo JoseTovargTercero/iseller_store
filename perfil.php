@@ -312,6 +312,24 @@ $userName = getUserName();
 .btn-share:hover {
   background: #1A9368;
 }
+
+/* Corrección del offset del navbar en móvil */
+@media (max-width: 480px) {
+    /* En móvil pequeño el navbar se apila en 2 filas (~120px de alto) */
+    .container.pb-5 {
+        margin-top: 135px !important;
+    }
+    .profile-header {
+        margin-top: 120px !important;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    /* En móvil/tablet el navbar es de 1 fila (~70px de alto) */
+    .container.pb-5 {
+        margin-top: 80px !important;
+    }
+}
     </style>
 </head>
 
@@ -331,6 +349,9 @@ $userName = getUserName();
                 <a href="checkout.php" class="btn-icon" title="Checkout">
                     <i class="bi bi-cart-fill"></i>
                 </a>
+                <a href="perfil.php?tab=orders" class="btn-icon" title="Mis Compras">
+                    <i class="bi bi-bag-check"></i>
+                </a>
                 <div class="dropdown">
                     <button class="btn-icon" data-bs-toggle="dropdown" title="Mi Cuenta">
                         <i class="bi bi-person"></i>
@@ -348,7 +369,7 @@ $userName = getUserName();
     </nav>
 
     <!-- Profile Header -->
-    <div class="profile-header hide" >
+    <div class="profile-header hide" id="profile-header-section">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-auto">
@@ -376,7 +397,7 @@ $userName = getUserName();
 
    
         <!-- Referral Banner -->
-        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background-image: url('assets/img/bg-referrer.png');">
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" id="referral-section" style="background-image: url('assets/img/bg-referrer.png');">
             <div class="card-body p-4 text-white position-relative">
                 <div class="row align-items-center position-relative" style="z-index: 2;">
                     <div class="col-md-8">
@@ -416,7 +437,7 @@ $userName = getUserName();
         </div>
 
         <!-- Stats Cards -->
-        <div class="row g-4 mb-4">
+        <div class="row g-4 mb-4" id="stats-section">
             <div class="col-md-4">
                 <div class="stat-card">
                     <div class="stat-icon green">
@@ -1079,6 +1100,40 @@ $userName = getUserName();
      
         // Load data on page load
         document.addEventListener('DOMContentLoaded', loadProfileData);
+
+        // Activar tab y scroll según parámetro GET ?tab=
+        document.addEventListener('DOMContentLoaded', function () {
+            const params = new URLSearchParams(window.location.search);
+            const tabParam = params.get('tab');
+            if (tabParam) {
+                const tabEl = document.getElementById(tabParam + '-tab');
+                if (tabEl) {
+                    // Ocultar secciones extras (modo enfocado)
+                    const sectionsToHide = [
+                        'profile-header-section',
+                        'referral-section',
+                        'stats-section',
+                        'profileTabs'
+                    ];
+                    sectionsToHide.forEach(function (id) {
+                        const el = document.getElementById(id);
+                        if (el) el.style.display = 'none';
+                    });
+
+                    // Activar el tab de Bootstrap
+                    const bsTab = new bootstrap.Tab(tabEl);
+                    bsTab.show();
+
+                    // Scroll al inicio del contenido del tab
+                    setTimeout(function () {
+                        const tabContent = document.getElementById('profileTabContent');
+                        if (tabContent) {
+                            tabContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 200);
+                }
+            }
+        });
     </script>
     
     <!-- Chat Component (Simplified) -->

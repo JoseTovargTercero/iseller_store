@@ -572,6 +572,12 @@ registrarVisita($conexion_store);
                     <?php endif; ?>
                 </div>
 
+                <?php if (isLoggedIn()): ?>
+                <a href="perfil.php?tab=orders" class="btn-icon" title="Mis Compras">
+                    <i class="bi bi-bag-check"></i>
+                </a>
+                <?php endif; ?>
+
                 <div class="cart-container">
                     <button class="btn-icon btn-cart position-relative" id="cartDropdown" data-bs-toggle="modal" data-bs-target="#modalCarrito">
                         <i class="bi bi-cart"></i>
@@ -613,7 +619,7 @@ registrarVisita($conexion_store);
         <div class="hero-overlay" id="hero-overlay"></div>
         <div class="hero-content py-3">
             <h1 class="hero-title text-white" id="hero-text"> ¡Compras gratis! Cada 5 niveles obtén $5 para gastar en los productos que desees. </h1>
-            <p class="lead mb-4 text-white">Contamos con tienda fisica. <a data-bs-toggle="modal" data-bs-target="#modalUbicacion" class="text-white pointer">Consulta nuestra ubicación</a></p>
+            <p class="lead mb-4 text-white"><b>Puerto Ayacucho ❤️ Edo Amazonas.</b> <br> <a data-bs-toggle="modal" data-bs-target="#modalUbicacion" class="text-white pointer">Consulta nuestra ubicación</a></p>
 
             <div class="d-flex flex-wrap justify-content-center gap-2">
                 <button class="btn rounded-pill px-4 py-2 text-white shadow-sm" style="background-color: rgb(111, 175, 122); border: none;" data-bs-toggle="modal" data-bs-target="#modalBeneficios">
@@ -849,6 +855,9 @@ registrarVisita($conexion_store);
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cerrar</button>
+                    <a href="perfil.php?tab=rewards" class="btn btn-success px-4">
+                        <i class="bi bi-gift-fill me-2"></i>Ver todas las recompensas
+                    </a>
                 </div>
             </div>
         </div>
@@ -1150,7 +1159,7 @@ registrarVisita($conexion_store);
 
 
 
-                    mapTienda = L.map('map-tienda').setView([lat, lng], 17);
+                    mapTienda = L.map('map-tienda').setView([lat, lng], 14);
 
                     googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
                             maxZoom: 20,
