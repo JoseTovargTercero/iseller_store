@@ -37,6 +37,11 @@ require_once 'session.php';
                         <i class="bi bi-people"></i> Clientes
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'recompensas.php' ? 'active fw-bold text-primary' : ''; ?>" href="recompensas.php">
+                        <i class="bi bi-gift"></i> Recompensas
+                    </a>
+                </li>
             </ul>
             <ul class="navbar-nav ms-auto align-items-center">
                 <li class="nav-item me-3">
