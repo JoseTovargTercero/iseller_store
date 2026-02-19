@@ -21,7 +21,7 @@ requireAdminLogin();
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/admin.css">
     <!-- Notiflix -->
-    <link rel="stylesheet" href="../assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-3.2.7.min.css" />
+    <link rel="stylesheet" href="../assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-3.2.8.min.css" />
     <meta name="csrf-token" content="<?php echo getCSRFToken(); ?>">
 </head>
 <body>
@@ -31,6 +31,27 @@ requireAdminLogin();
     <!-- Main Content -->
     <div class="container-fluid px-4 py-4">
         
+        <!-- Dashboard Header & Period Selector -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <div>
+                <h1 class="h3 fw-bold mb-0 text-dark">Panel de Control</h1>
+                <p class="text-muted small mb-0">Resumen general de tu tienda iSeller</p>
+            </div>
+            <div class="btn-group bg-white shadow-sm p-1 rounded-pill" role="group" id="period-selector">
+                <input type="radio" class="btn-check" name="period" id="period-today" value="today" checked>
+                <label class="btn btn-outline-primary border-0 rounded-pill px-3" for="period-today">Hoy</label>
+
+                <input type="radio" class="btn-check" name="period" id="period-week" value="week">
+                <label class="btn btn-outline-primary border-0 rounded-pill px-3" for="period-week">Semana</label>
+
+                <input type="radio" class="btn-check" name="period" id="period-month" value="month">
+                <label class="btn btn-outline-primary border-0 rounded-pill px-3" for="period-month">Mes</label>
+
+                <input type="radio" class="btn-check" name="period" id="period-total" value="total">
+                <label class="btn btn-outline-primary border-0 rounded-pill px-3" for="period-total">Todo</label>
+            </div>
+        </div>
+
         <!-- Stats Row -->
         <div class="row g-3 mb-4" id="stats-container">
             <!-- Loaded via JS -->
@@ -229,7 +250,7 @@ requireAdminLogin();
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-3.2.7.min.js"></script>
+    <script src="../assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-3.2.8.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="assets/js/app.js"></script>

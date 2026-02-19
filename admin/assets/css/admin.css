@@ -97,6 +97,36 @@ body {
 .fw-12{
     font-size: 12px;
 }
-.fw-14{
-    font-size: 14px;
+/* Dash Improvements */
+#period-selector {
+    border: 1px solid #e5e7eb;
+}
+#period-selector .btn-check:checked + .btn {
+    background-color: var(--primary) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+}
+#period-selector .btn:hover {
+    background-color: #f9fafb;
+}
+
+.shadow-xs {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.card {
+    transition: all 0.2s ease-in-out;
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important;
+}
+
+.stat-icon-bg {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
 }

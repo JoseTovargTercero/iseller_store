@@ -69,7 +69,7 @@ if ($status) {
 }
 
 if ($search) {
-    $sql .= " AND (u.nombre LIKE ? OR o.id LIKE ?)";
+    $sql .= " AND (u.nombre LIKE ? OR cpu.compra_id LIKE ?)";
     $types .= "ss";
     $params[] = "%$search%";
     $params[] = "%$search%";

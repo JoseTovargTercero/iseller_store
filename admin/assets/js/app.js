@@ -19,6 +19,8 @@ const STATUS_FLOW = {
     'rechazada': { next: null, prev: null, label: 'Rechazada', class: 'bg-rechazada' }
 };
 
+let dashboardStats = null;
+
 function setupListeners() {
     // Logout
     const btnLogout = document.getElementById('btnLogout');
@@ -47,6 +49,15 @@ function setupListeners() {
         radio.addEventListener('change', () => loadOrders());
     });
 
+    // Period Stats Selector
+    document.querySelectorAll('input[name="period"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (dashboardStats) {
+                renderStats(dashboardStats, e.target.value);
+            }
+        });
+    });
+
     // Search
     let debounceTimer;
     document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -64,56 +75,96 @@ async function loadStats() {
         const res = await fetch('api/dashboard_stats.php');
         const data = await res.json();
         if (data.success) {
-            renderStats(data.stats);
+            dashboardStats = data.stats;
+            const currentPeriod = document.querySelector('input[name="period"]:checked')?.value || 'today';
+            renderStats(dashboardStats, currentPeriod);
         }
     } catch (e) {
         console.error("Error loading stats", e);
     }
 }
 
-function renderStats(stats) {
+function renderStats(allStats, period) {
+    const stats = allStats[period];
     const container = document.getElementById('stats-container');
+    
+    // Status badges class mapping
+    const statusClasses = {
+        'pendiente': 'warning',
+        'en_revision': 'info',
+        'enviada': 'primary',
+        'entregada': 'success',
+        'rechazada': 'danger'
+    };
+
     container.innerHTML = `
-        <div class="col-6 col-md-2">
-            <div class="stat-card pendiente">
-                <div class="stat-num text-warning">${stats.pendiente}</div>
-                <div class="stat-label">Pendientes</div>
+        <!-- Main Metrics -->
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden" style="border-left: 5px solid #007bff !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Ingresos Estimados</p>
+                            <h2 class="fw-bold mb-0 text-dark">${stats.revenue.toFixed(2)} <span class="fs-6 fw-normal">Bs</span></h2>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-wallet2 text-primary fs-4"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-6 col-md-2">
-            <div class="stat-card en_revision">
-                <div class="stat-num text-info">${stats.en_revision}</div>
-                <div class="stat-label">Revisión</div>
+
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden" style="border-left: 5px solid #28a745 !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Total Pedidos</p>
+                            <h2 class="fw-bold mb-0 text-dark">${stats.orders.total}</h2>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-cart-check text-success fs-4"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-6 col-md-2">
-            <div class="stat-card enviada">
-                <div class="stat-num text-primary">${stats.enviada}</div>
-                <div class="stat-label">Enviadas</div>
+
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden" style="border-left: 5px solid #17a2b8 !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Visitas del Periodo</p>
+                            <h2 class="fw-bold mb-0 text-dark">${stats.visits}</h2>
+                            <div class="text-info small mt-1">
+                                <i class="bi bi-person-check me-1"></i><strong>${stats.unique_visits}</strong> únicas
+                            </div>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-eye text-info fs-4"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-6 col-md-2">
-            <div class="stat-card entregada">
-                <div class="stat-num text-success">${stats.entregada}</div>
-                <div class="stat-label">Entregadas</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-2">
-            <div class="stat-card rechazada">
-                <div class="stat-num text-danger">${stats.rechazada}</div>
-                <div class="stat-label">Rechazadas</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-1">
-            <div class="stat-card bg-light">
-                <div class="stat-num text-dark">${stats.visitas_hoy}</div>
-                <div class="stat-label">Visitas Hoy</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-1">
-            <div class="stat-card bg-light">
-                <div class="stat-num text-secondary">${stats.visitas_totales}</div>
-                <div class="stat-label">Total Visitas</div>
+
+        <!-- Breakdown Row -->
+        <div class="col-12 mt-3">
+            <div class="d-flex flex-wrap gap-2">
+                ${Object.entries(stats.orders).map(([status, count]) => {
+                    if (status === 'total') return '';
+                    const label = STATUS_FLOW[status]?.label || status;
+                    const color = statusClasses[status] || 'secondary';
+                    return `
+                        <div class="bg-white border rounded px-3 py-2 shadow-xs d-flex align-items-center">
+                            <span class="badge bg-${color} rounded-circle me-2" style="width: 10px; height: 10px; padding: 0;">&nbsp;</span>
+                            <span class="text-muted small me-2">${label}:</span>
+                            <span class="fw-bold text-dark">${count}</span>
+                        </div>
+                    `;
+                }).join('')}
             </div>
         </div>
     `;
@@ -190,7 +241,16 @@ function renderOrders(orders) {
              actionsHtml += `<button class="btn btn-danger btn-sm" onclick="deleteOrder(${order.cpu_id})" title="Eliminar definitivamente"><i class="bi bi-trash"></i></button>`;
         }
 
-        let totalBs = parseFloat(order.valor_compra_bs) + parseFloat(order.importe_envio_bs);
+        let totalBs = parseFloat(order.valor_compra_bs)
+        let bsEnvio = 0;
+        
+        if (order.entrega.tipo === 'delivery') {
+            bsEnvio = parseFloat(order.importe_envio_bs);
+            totalBs += bsEnvio;
+        }
+
+
+
         let deliveryType = order.entrega.tipo === 'delivery' ? '<span class="badge bg-secondary">Delivery</span>' : '<span class="badge bg-light text-dark border">Retiro</span>';
         
         // Logic to show savings
@@ -220,7 +280,7 @@ function renderOrders(orders) {
                 ${deliveryType}
             </td>
             <td>
-                <div >${parseFloat(order.importe_envio_bs).toFixed(2)} Bs</div>
+                <div >${bsEnvio} Bs</div>
             </td>
             <td>
                 <div >${parseFloat(order.valor_compra_bs).toFixed(2)} Bs</div>
@@ -268,7 +328,9 @@ window.tryChangeStatus = (id, newStatus) => {
 window.changeStatus = async (id, newStatus) => {
     try {
         const res = await fetch('api/update_status.php', {
-            method: 'POST', body: JSON.stringify({ id, status: newStatus })
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status: newStatus })
         });
         const data = await res.json();
         if (data.success) {
@@ -316,7 +378,9 @@ window.confirmReject = async () => {
 
     try {
         const res = await fetch('api/reject_order.php', {
-            method: 'POST', body: JSON.stringify({ id: pendingRejectionId, motivo })
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: pendingRejectionId, motivo })
         });
         const data = await res.json();
         if (data.success) {
@@ -340,7 +404,9 @@ window.deleteOrder = async (id) => {
         async () => {
             try {
                 const res = await fetch('api/delete_order.php', {
-                    method: 'POST', body: JSON.stringify({ id })
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
                 });
                 const data = await res.json();
                 if (data.success) {
