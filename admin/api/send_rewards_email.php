@@ -64,7 +64,7 @@ function enviarCorreoRecompensa(string $to, string $nombre): bool
     if (!$to) return false;
 
     $from    = 'contacto@iseller-tiendas.com';
-    $subject = 'Tienes una recompensa lista para usar — no la dejes pasar';
+    $subject = 'Tienes una recompensa disponible en tu cuenta - iSeller Tiendas';
     $storeUrl = 'https://iseller-tiendas.com';
 
     $nombreSeguro = htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8');
@@ -239,7 +239,7 @@ function enviarCorreoRecompensa(string $to, string $nombre): bool
     <!-- Hero -->
     <div class="hero-banner">
       <span class="emoji-big">🎁</span>
-      <h1>Tienes una recompensa lista para usar<br>— no la dejes pasar</h1>
+      <h1>Tienes una recompensa disponible en tu cuenta</h1>
     </div>
 
     <!-- Main Content -->
@@ -247,36 +247,32 @@ function enviarCorreoRecompensa(string $to, string $nombre): bool
 
       <p class="greeting">Hola, <strong>{$nombreSeguro}</strong></p>
 
-      <p style="font-size:15px; color:#444;">
-        Tenemos algo especial para ti 👀
+      <p style="font-size:15px; color:#444; margin-bottom: 18px;">
+        Queremos informarte que tienes una recompensa disponible en tu cuenta, lista para ser utilizada en tu próxima compra.
       </p>
 
       <div class="highlight-block">
-        <p><span class="point-emoji">✨</span> Has desbloqueado una recompensa en tu cuenta y ya está disponible para que la uses en tu próxima compra.</p>
-        <p><span class="point-emoji">🛒</span> Úsala hoy mismo y conviértela en productos reales en tu carrito.</p>
+        <p>Esta recompensa forma parte de nuestro programa de beneficios y puede aplicarse directamente en el carrito al momento de pagar.</p>
       </div>
 
       <p style="font-size:15px; color:#444; margin-bottom: 8px;">
-        👉 Ingresar ahora y usa tu recompensa:
+        👉 Accede a tu cuenta para usar tu recompensa:
       </p>
 
       <div class="cta-wrapper">
-        <a href="{$storeUrl}" class="cta-btn">Ir al e-commerce</a>
+        <a href="{$storeUrl}" class="cta-btn">Ingresar al e-commerce</a>
       </div>
 
       <p class="helping-text">
-        Recuerda: cada compra te permite ganar más puntos, subir de nivel y desbloquear nuevos beneficios, así que esta puede ser la oportunidad perfecta para comenzar.
+        Aprovecha esta oportunidad para ahorrar en tus próximas compras y seguir acumulando puntos y beneficios.
+        Si tienes alguna duda, nuestro equipo estará encantado de ayudarte.
       </p>
 
       <hr class="divider">
 
       <div class="signature">
-        Nos vemos dentro,<br>
+        Saludos,<br>
         <strong>Equipo de Iseller Tiendas</strong>
-      </div>
-
-      <div class="ps-block">
-        <strong>P.D.:</strong> Muchos usuarios ya están usando sus recompensas. No te quedes fuera 😉
       </div>
 
     </div>
