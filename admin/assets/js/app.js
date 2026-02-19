@@ -234,6 +234,10 @@ function renderOrders(orders) {
             if (statusConfig.next) {
                  actionsHtml += `<button class="btn btn-primary btn-sm me-1" onclick="tryChangeStatus(${order.cpu_id}, '${statusConfig.next}')" title="Avanzar"><i class="bi bi-arrow-right"></i></button>`;
             }
+            // WhatsApp Notification Button for Shipped Status
+            if (order.estado === 'enviada') {
+                actionsHtml += `<button class="btn btn-success btn-sm me-1" onclick="sendWhatsAppNotification(${order.cpu_id})" title="Notificar por WhatsApp"><i class="bi bi-whatsapp"></i></button>`;
+            }
             // Reject Button
             actionsHtml += `<button class="btn btn-outline-danger btn-sm" onclick="openRejectModal(${order.cpu_id})" title="Rechazar"><i class="bi bi-x-lg"></i></button>`;
         } else if (isRechazada) {
@@ -423,6 +427,31 @@ window.deleteOrder = async (id) => {
     );
 }
 
+window.sendWhatsAppNotification = (id) => {
+    const order = currentOrders.find(o => o.cpu_id == id);
+    if (!order) return;
+
+    const nombre = order.cliente.nombre;
+    const telefonoRaw = order.cliente.telefono || "";
+    // Limpiar el teléfono para dejar solo números (wa.me requiere números sin símbolos)
+    const telefono = telefonoRaw.replace(/\D/g, '');
+    
+    if (!telefono) {
+        showToast("El cliente no tiene un teléfono válido registrado", "error");
+        return;
+    }
+
+    let mensaje = "";
+    if (order.entrega.tipo === 'delivery') {
+        mensaje = `Hola ${nombre}, 👋\nTu pedido ya va en camino para su entrega 🚚\nTe agradecemos estar atento(a) a la llegada del repartidor. ¡Gracias por tu compra!`;
+    } else {
+        mensaje = `Hola ${nombre}, 👋\nTu pedido ya está disponible para retirar en tienda 🛍️\n📍 Urbanización Simón Bolívar, calle principal.\nPuedes consultar la ubicación en el mapa desde nuestro e-commerce.`;
+    }
+
+    const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+}
+
 let mapInstance = null;
 
 window.viewDetails = (id) => {
@@ -507,9 +536,18 @@ window.viewDetails = (id) => {
             </tr>
         `;
     });
+
+    let totalBs = parseFloat(order.valor_compra_bs); // Correct Sum
+    let deliveryBs = parseFloat(order.importe_envio_bs);
+
+
+    if (order.entrega.tipo === 'delivery'){
+        totalBs += deliveryBs;
+        deliveryBs = deliveryBs.toFixed(2);
+    }else{
+        deliveryBs = '0.00';
+    }
     
-    const totalBs = parseFloat(order.valor_compra_bs) + parseFloat(order.importe_envio_bs); // Correct Sum
-    const deliveryBs = parseFloat(order.importe_envio_bs);
     
     let deliveryRow = '';
     if (order.entrega.tipo === 'delivery') {
