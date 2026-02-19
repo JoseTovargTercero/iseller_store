@@ -33,6 +33,49 @@ requireAdminLogin();
             </div>
         </div>
 
+        <!-- Estadísticas Rápidas -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 me-3">
+                            <i class="bi bi-person-plus-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Nuevos Hoy</h6>
+                            <h3 class="fw-bold mb-0" id="statsToday">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-success bg-opacity-10 text-success p-3 rounded-3 me-3">
+                            <i class="bi bi-people-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Esta Semana</h6>
+                            <h3 class="fw-bold mb-0" id="statsWeek">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-info bg-opacity-10 text-info p-3 rounded-3 me-3">
+                            <i class="bi bi-calendar-check-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Este Mes</h6>
+                            <h3 class="fw-bold mb-0" id="statsMonth">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card border-0 shadow-sm overflow-hidden">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -49,6 +92,16 @@ requireAdminLogin();
                         <!-- JS Loaded -->
                     </tbody>
                 </table>
+            </div>
+            <div class="card-footer bg-white border-0 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted small" id="paginationInfo">Mostrando 0 de 0 clientes</div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0" id="paginationControls">
+                            <!-- JS Loaded -->
+                        </ul>
+                    </nav>
+                </div>
             </div>
         </div>
     </div>
@@ -79,28 +132,97 @@ requireAdminLogin();
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             loadCustomers();
+            loadStats();
             
             let searchTimer;
             document.getElementById('searchCustomer').oninput = (e) => {
                 clearTimeout(searchTimer);
-                searchTimer = setTimeout(() => loadCustomers(e.target.value), 400);
+                searchTimer = setTimeout(() => {
+                    currentPage = 1;
+                    loadCustomers(e.target.value);
+                }, 400);
             };
         });
+
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        async function loadStats() {
+            try {
+                const res = await fetch('api/get_customer_stats.php');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('statsToday').textContent = data.stats.today;
+                    document.getElementById('statsWeek').textContent = data.stats.week;
+                    document.getElementById('statsMonth').textContent = data.stats.month;
+                }
+            } catch (e) {
+                console.error('Error loading stats:', e);
+            }
+        }
 
         async function loadCustomers(search = '') {
             const table = document.getElementById('customersTable');
             table.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
 
             try {
-                const res = await fetch(`api/get_customers.php?search=${encodeURIComponent(search)}`);
+                const res = await fetch(`api/get_customers.php?search=${encodeURIComponent(search)}&page=${currentPage}&limit=${itemsPerPage}`);
                 const data = await res.json();
 
                 if (data.success) {
                     renderCustomers(data.customers);
+                    renderPagination(data.pagination);
                 }
             } catch (e) {
                 table.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-danger">Error al cargar clientes</td></tr>';
             }
+        }
+
+        function renderPagination(pagination) {
+            const controls = document.getElementById('paginationControls');
+            const info = document.getElementById('paginationInfo');
+            
+            const start = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+            const end = Math.min(pagination.page * pagination.limit, pagination.total);
+            info.textContent = `Mostrando ${start} a ${end} de ${pagination.total} clientes`;
+
+            let html = '';
+            
+            // Prev
+            html += `
+                <li class="page-item ${pagination.page === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${pagination.page - 1})"><i class="bi bi-chevron-left"></i></a>
+                </li>
+            `;
+
+            // Pages (simple)
+            for (let i = 1; i <= pagination.pages; i++) {
+                if (i === 1 || i === pagination.pages || (i >= pagination.page - 2 && i <= pagination.page + 2)) {
+                    html += `
+                        <li class="page-item ${pagination.page === i ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                        </li>
+                    `;
+                } else if (i === pagination.page - 3 || i === pagination.page + 3) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+
+            // Next
+            html += `
+                <li class="page-item ${pagination.page === pagination.pages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${pagination.page + 1})"><i class="bi bi-chevron-right"></i></a>
+                </li>
+            `;
+
+            controls.innerHTML = html;
+        }
+
+        function changePage(page) {
+            if (page < 1) return;
+            currentPage = page;
+            loadCustomers(document.getElementById('searchCustomer').value);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function renderCustomers(customers) {
@@ -158,6 +280,9 @@ requireAdminLogin();
                     try {
                         const res = await fetch('api/update_customer_status.php', {
                             method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
                             body: JSON.stringify({ id, estado: newStatus })
                         });
                         const data = await res.json();
