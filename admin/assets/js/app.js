@@ -543,9 +543,8 @@ window.viewDetails = (id) => {
 
     if (order.entrega.tipo === 'delivery'){
         totalBs += deliveryBs;
-        deliveryBs = deliveryBs.toFixed(2);
     }else{
-        deliveryBs = '0.00';
+        deliveryBs = 0;
     }
     
     
