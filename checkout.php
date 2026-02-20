@@ -630,11 +630,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-fullscreen/dist/leaflet.fullscreen.css" />
     <!-- Global Styles -->
     <link rel="stylesheet" href="assets/css/global-styles.css">
     <!-- Chat System CSS -->
     <link rel="stylesheet" href="assets/css/chat.css">
-    
+    <script src="https://unpkg.com/leaflet-pip/leaflet-pip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     <meta name="csrf-token" content="<?php echo getCSRFToken(); ?>">
     
     <style>
@@ -726,11 +728,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-color: rgba(25, 135, 84, 0.1);
             transform: scale(1.1);
         }
+
+        /* Community Search Results */
+        .search-container { position: relative; }
+        .community-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-bottom-left-radius: var(--radius-md);
+            border-bottom-right-radius: var(--radius-md);
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: var(--shadow-sm);
+            display: none;
+        }
+        .community-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        .community-item:last-child { border-bottom: none; }
+        .community-item:hover { background: var(--bg-secondary); }
     </style>
     
     <!-- Dexie & Leaflet -->
     <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet-fullscreen/dist/Leaflet.fullscreen.js"></script>
 </head>
 
 <body data-user-logged-in="<?php echo isLoggedIn() ? 'true' : 'false'; ?>">
@@ -1010,9 +1040,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label class="form-label small fw-bold text-muted">TELÉFONO *</label>
                                 <input type="number" class="form-control" id="addr-phone" required placeholder="0414-XXXXXXX">
                             </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-muted">URBANIZACIÓN / BARRIO *</label>
+                                <div class="search-container">
+                                    <input type="text" class="form-control" id="addr-community" required placeholder="Comunidad" autocomplete="off">
+                                    <div id="community-search-results" class="community-results"></div>
+                                </div>
+                            </div>
+
+
+
+
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-muted">DIRECCIÓN EXACTA *</label>
-                                <textarea class="form-control" id="addr-text" rows="2" required placeholder="Calle, Casa, Urb..."></textarea>
+                                <textarea class="form-control" id="addr-text" rows="2" required placeholder="Calle, Casa..."></textarea>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-muted">PUNTO DE REFERENCIA</label>
@@ -1047,12 +1089,112 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <?php if (isLoggedIn()): ?>
     <script>
+
+
+ /* INDICE PARA BUSCAR COMUNIDADES */
+    let fuse;
+    let comunidadesIndex = [];
+
+    fetch('assets/js/comunidades.geojson')
+    .then(r => r.json())
+    .then(data => {
+
+        comunidadesIndex = data.features.map(f => ({
+            nombre: f.properties.NAME, // ajusta campo
+            feature: f
+        }));
+
+        fuse = new Fuse(comunidadesIndex, {
+            keys: ['nombre'],
+            threshold: 0.35,  // tolerancia al error
+            minMatchCharLength: 3,
+            includeScore: true
+        });
+    });
+    /* INDICE PARA BUSCAR COMUNIDADES */
+
+
+
+
+
+        // --- COMUNIDADES SEARCH LOGIC ---
+        function initCommunitySearch() {
+            const input = document.getElementById('addr-community');
+            const resultsDiv = document.getElementById('community-search-results');
+
+            input.addEventListener('input', (e) => {
+                const query = e.target.value;
+                if (!fuse || query.length < 2) {
+                    resultsDiv.style.display = 'none';
+                    return;
+                }
+
+                const results = fuse.search(query).slice(0, 10);
+                if (results.length > 0) {
+                    let html = '';
+                    results.forEach(res => {
+                        html += `<div class="community-item" onclick="selectCommunity('${res.item.nombre}')">${res.item.nombre}</div>`;
+                    });
+                    resultsDiv.innerHTML = html;
+                    resultsDiv.style.display = 'block';
+                } else {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+
+            // Cerrar al hacer click fuera
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+        }
+
+        function selectCommunity(name) {
+            const input = document.getElementById('addr-community');
+            const resultsDiv = document.getElementById('community-search-results');
+            
+            input.value = name;
+            resultsDiv.style.display = 'none';
+
+            // Buscar en la capa comunidadesLayer para mover el mapa y resaltar
+            if (comunidadesLayer) {
+                let found = false;
+                
+                // Resetear estilos de todas las comunidades primero
+                comunidadesLayer.eachLayer(layer => {
+                    comunidadesLayer.resetStyle(layer);
+                });
+
+                comunidadesLayer.eachLayer(layer => {
+                    if (layer.feature.properties.NAME === name) {
+                        // Resaltar el polígono seleccionado
+                        layer.setStyle({
+                            color: '#2c7be5be', // Azul más fuerte
+                            strokeOpacity: 1,
+                            weight: 3,
+                            fillColor: '#2c7ce5be',
+                            fillOpacity: 0.05
+                        });
+                        layer.bringToFront();
+                        
+                        map.fitBounds(layer.getBounds(), { padding: [50, 50] });
+                        found = true;
+                    }
+                });
+                
+                if (!found) {
+                    console.warn('Comunidad no encontrada en el mapa:', name);
+                }
+            }
+        }
+
         // --- VARIABLES GLOBALES ---
         let selectedAddressId = null;
         let selectedAddressData = null;
         let deliveryType = 'delivery'; // 'delivery' or 'retiro_tienda'
         let cartItems = [];
-        let map, marker;
+        let map, marker, comunidadesLayer;
         let nivelUsuario = <?php echo $nivelUsuario; ?>;
         let puntosUsuario = <?php echo $puntosUsuario; ?>;
 
@@ -1082,6 +1224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         document.addEventListener('DOMContentLoaded', () => {
              cargarCarrito();
              cargarDirecciones();
+             initCommunitySearch();
         });
 
         // --- FUNCIONES WIZARD ---
@@ -1323,26 +1466,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }, { once: true });
         }
 
-     function initMap() {
+        // --- CONFIGURACIÓN DE GEOCERCA ---
+        const GEOFENCE_CENTER = [5.653802, -67.605304];
+        const GEOFENCE_RADIUS = 6500; // 5 kilómetros en metros
+        let geofenceCircle = null;
+
+        function initMap() {
             if (map) {
                 map.invalidateSize();
                 return;
             }
 
-            const defaultLat = 5.642742;
-            const defaultLng = -67.602310;
+            const defaultLat = GEOFENCE_CENTER[0];
+            const defaultLng = GEOFENCE_CENTER[1];
 
-            map = L.map('map').setView([defaultLat, defaultLng], 16);
-
+            map = L.map('map', {
+                fullscreenControl: true,
+                fullscreenControlOptions: {
+                    position: 'topleft'
+                }
+            }).setView([defaultLat, defaultLng], 13);
 
             googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
                     maxZoom: 20,
                     subdomains:['mt0','mt1','mt2','mt3']
             });
 
+
+            fetch('assets/js/comunidades.geojson')
+            .then(res => res.json())
+            .then(data => {
+                comunidadesLayer = L.geoJSON(data, {
+                    style: {
+                        color: '#8abdff2d',
+                        strokeOpacity: 0.5,
+                        weight: 1,
+                        fillOpacity: 0
+                    }
+                }).addTo(map);
+            });
+
             googleHybrid.addTo(map);
 
-            marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+            // Dibujar Círculo de Perímetro (Geocerca)
+            geofenceCircle = L.circle(GEOFENCE_CENTER, {
+                color: '#198754',      // Verde Bootstrap
+                fillColor: '#25ca7dff',
+                fillOpacity: 0,
+                radius: GEOFENCE_RADIUS,
+                weight: 2,
+                dashArray: '5, 10',
+                interactive: false      // No interferir con clicks en el mapa
+            }).addTo(map);
+
+            // Crear el marcador pero NO añadirlo al mapa todavía
+            marker = L.marker([defaultLat, defaultLng], { draggable: true });
+
+            // Intentar obtener geolocalización del navegador
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        if (isWithinPerimeter(lat, lng)) {
+                            // Actualizar mapa y marcador si está dentro
+                            map.setView([lat, lng], 21);
+                            updateMarker(lat, lng);
+                            Notiflix.Notify.success('Ubicación detectada exitosamente');
+                        } else {
+                            Notiflix.Notify.warning('Ubicación fuera de rango. Por favor ingrese su ubicación manualmente.');
+                            console.warn('Geolocalización fuera del perímetro');
+                            
+                            // Asegurarse de que el marcador no esté en el mapa
+                            if (map.hasLayer(marker)) map.removeLayer(marker);
+                        }
+                    },
+                    (error) => {
+                        console.warn('Error de geolocalización:', error.message);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    }
+                );
+            }
 
             map.on('click', e => {
                 updateMarker(e.latlng.lat, e.latlng.lng);
@@ -1350,14 +1559,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             marker.on('dragend', e => {
                 const { lat, lng } = marker.getLatLng();
-                updateUiCoords(lat, lng);
+                updateMarker(lat, lng, true); // Validar al soltar el drag
             });
 
         }
 
+        function isWithinPerimeter(lat, lng) {
+            if (!lat || !lng) return false;
+            const center = L.latLng(GEOFENCE_CENTER);
+            const target = L.latLng(lat, lng);
+            return center.distanceTo(target) <= GEOFENCE_RADIUS;
+        }
 
+        function updateMarker(lat, lng, fromDrag = false) {
+            if (!isWithinPerimeter(lat, lng)) {
+                Notiflix.Notify.failure('La ubicación seleccionada está fuera de nuestra zona de entrega.');
+                
+                // Reseteamos la vista al centro del perímetro
+                map.panTo(GEOFENCE_CENTER);
+                
+                // Si la ubicación es inválida, ocultamos el marcador
+                if (map.hasLayer(marker)) {
+                    map.removeLayer(marker);
+                }
+                
+                // Limpiar coordenadas en el UI
+                document.getElementById('addr-lat').value = '';
+                document.getElementById('addr-lng').value = '';
+                document.getElementById('lbl-lat').textContent = '---';
+                document.getElementById('lbl-lng').textContent = '---';
 
-        function updateMarker(lat, lng) {
+                return;
+            }
+
+            // Si es válido, asegurar que el marcador esté en el mapa
+            if (!map.hasLayer(marker)) {
+                marker.addTo(map);
+            }
+
             marker.setLatLng([lat, lng]);
             updateUiCoords(lat, lng);
         }
@@ -1372,7 +1611,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function guardarDireccion() {
             const nombre = document.getElementById('addr-name').value;
             const telefono = document.getElementById('addr-phone').value;
-            const direccion = document.getElementById('addr-text').value;
+            const comunidad = document.getElementById('addr-community').value;
+            let direccion = document.getElementById('addr-text').value;
+            direccion = comunidad + ', ' + direccion;
             const ref = document.getElementById('addr-ref').value;
             const lat = document.getElementById('addr-lat').value;
             const lng = document.getElementById('addr-lng').value;
