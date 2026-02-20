@@ -1424,7 +1424,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // --- LOGICA MENSAJE ESTIMADO ---
-        function getEstimatedDeliveryMessage(type) {
+     /*   function getEstimatedDeliveryMessage(type) {
             const now = new Date();
             const day = now.getDay(); // 0: Dom, 1: Lun, ..., 6: Sab
             const hour = now.getHours();
@@ -1468,7 +1468,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             return "";
         }
+*/
 
+            // --- LOGICA MENSAJE ESTIMADO ---
+            function getEstimatedDeliveryMessage(type) {
+                const now = new Date();
+                const day = now.getDay(); // 0: Dom, 1: Lun, ..., 6: Sab
+                const hour = now.getHours();
+                const min = now.getMinutes();
+                const timeVal = hour * 100 + min;
+
+                const isWeekday = (day >= 1 && day <= 5);
+                const isSaturday = (day === 6);
+
+                console.log('Hora real JS:', hour + ':' + min, 'timeVal:', timeVal);
+
+                // --- RETIRO EN TIENDA (solo Lunes a Viernes) ---
+                if (type === 'retiro_tienda') {
+                    const isWithinPickup = isWeekday && timeVal >= 900 && timeVal < 1900;
+
+                    if (!isWithinPickup) {
+                        return "Tu compra estará disponible para retiro en tienda dentro del horario de atención: Lunes a Viernes de 9:00 AM a 7:00 PM.";
+                    }
+                    return "";
+                }
+
+                // --- DELIVERY (Lunes a Sábado) ---
+                if (type === 'delivery') {
+
+                    // Domingo: no se trabaja
+                    if (day === 0) {
+                        return "Tu pedido será enviado el lunes a partir de las 8:00 AM.";
+                    }
+
+                    // Antes de las 8 AM
+                    if (timeVal < 800) {
+                        return "Tu pedido será enviado hoy a partir de las 8:00 AM.";
+                    }
+
+                    // Ventanas de despacho
+                    if ((timeVal >= 800 && timeVal <= 1130) || (timeVal >= 1400 && timeVal < 1800)) {
+                        return "Tu pedido será enviado en un período aproximado de 20 minutos.";
+                    }
+
+                    // Pausa de mediodía
+                    if (timeVal > 1130 && timeVal < 1400) {
+                        return "Tu pedido será enviado hoy a partir de las 2:00 PM.";
+                    }
+
+                    // Fuera de horario
+                    if (timeVal >= 1800) {
+                        if (isSaturday) {
+                            return "Tu pedido será enviado el lunes a partir de las 8:00 AM.";
+                        }
+                        return "Tu pedido será enviado mañana a partir de las 8:00 AM.";
+                    }
+                }
+
+                return "";
+            }
         // --- FINALIZAR COMPRA ---
         function finalizarCompra() {
             // Validacion de Pago
