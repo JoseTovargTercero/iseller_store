@@ -20,7 +20,7 @@ $conexion_store->begin_transaction();
 try {
     // 1. Obtener usuario_id, compra_id y datos del usuario
     $stmt = $conexion_store->prepare("
-        SELECT c.usuario_id, c.compra_id, c.orden_id, u.nombre, u.email 
+        SELECT c.usuario_id, c.compra_id, u.nombre, u.email 
         FROM compras_por_usuarios c
         JOIN usuarios u ON c.usuario_id = u.id
         WHERE c.id = ?
@@ -37,7 +37,7 @@ try {
 
     $usuario_id = $data['usuario_id'];
     $compra_id_internal = $data['compra_id'];
-    $orden_id = $data['orden_id'];
+    $orden_id = $data['compra_id'];
     $user_name = $data['nombre'];
     $user_email = $data['email'];
 
