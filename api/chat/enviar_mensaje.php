@@ -93,6 +93,10 @@ try {
     // Commit transacción
     $conexion_store->commit();
     
+    // Enviar notificación a administración
+    require_once('chat_helpers.php');
+    enviarNotificacionNuevoMensaje($usuario_id, $conversacion_id, $mensaje);
+    
     echo json_encode([
         'success' => true,
         'mensaje_id' => $mensaje_id,
