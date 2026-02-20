@@ -6,6 +6,7 @@
 
 require_once('../../../core/db.php');
 require_once('../../../admin/includes/session.php');
+require_once('../../chat/chat_helpers.php');
 
 header('Content-Type: application/json');
 
@@ -83,6 +84,9 @@ try {
     
     // Commit transacción
     $conexion_store->commit();
+    
+    // Enviar notificación al usuario (vía Correo)
+    enviarNotificacionRespuestaAdmin($conversacion_id, $mensaje);
     
     echo json_encode([
         'success' => true,
