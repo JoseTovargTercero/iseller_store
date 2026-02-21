@@ -789,23 +789,23 @@ $userName = getUserName();
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-muted">Nombre</label>
-                            <input type="text" class="form-control  border-secondary text-white" id="info-nombre" readonly>
+                            <input type="text" class="form-control  border-secondary " id="info-nombre" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-muted">Email</label>
-                            <input type="email" class="form-control  border-secondary text-white" id="info-email" readonly>
+                            <input type="email" class="form-control  border-secondary " id="info-email" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-muted">Nivel</label>
-                            <input type="text" class="form-control  border-secondary text-white" id="info-nivel" readonly>
+                            <input type="text" class="form-control  border-secondary " id="info-nivel" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-muted">Puntos</label>
-                            <input type="text" class="form-control  border-secondary text-white" id="info-puntos" readonly>
+                            <input type="text" class="form-control  border-secondary " id="info-puntos" readonly>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold text-muted">Miembro desde</label>
-                            <input type="text" class="form-control  border-secondary text-white" id="info-fecha" readonly>
+                            <input type="text" class="form-control  border-secondary " id="info-fecha" readonly>
                         </div>
                     </div>
                     
