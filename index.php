@@ -137,7 +137,13 @@ registrarVisita($conexion_store);
 
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "vkl5wdgfvq");
+</script>
     <style>
         /* Rewards Bar Styles */
         .rewards-bar-container {
@@ -709,13 +715,22 @@ registrarVisita($conexion_store);
         <!-- Grid Header: Sorting -->
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
             <h2 class="fw-bold mb-0" style="color: var(--text-primary);">Nuestros Productos</h2>
-            <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small fw-medium text-nowrap"><i class="bi bi-filter me-1"></i> Ordenar por:</span>
-                <select class="form-select form-select-sm border-0 shadow-sm" id="sort-products" style="border-radius: var(--radius-md); min-width: 160px; height: 38px; cursor: pointer; background-color: white;">
-                    <option value="" selected>Recomendados</option>
-                    <option value="name_asc">Nombre (A-Z)</option>
-                    <option value="name_desc">Nombre (Z-A)</option>
-                </select>
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small fw-medium text-nowrap"><i class="bi bi-tags me-1"></i> Categoría:</span>
+                    <select class="form-select form-select-sm border-0 shadow-sm" id="filter-category" style="border-radius: var(--radius-md); min-width: 160px; height: 38px; cursor: pointer; background-color: white;">
+                        <option value="" selected>Todas</option>
+                        <!-- Loaded via JS -->
+                    </select>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small fw-medium text-nowrap"><i class="bi bi-filter me-1"></i> Ordenar por:</span>
+                    <select class="form-select form-select-sm border-0 shadow-sm" id="sort-products" style="border-radius: var(--radius-md); min-width: 160px; height: 38px; cursor: pointer; background-color: white;">
+                        <option value="" selected>Recomendados</option>
+                        <option value="name_asc">Nombre (A-Z)</option>
+                        <option value="name_desc">Nombre (Z-A)</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -1253,7 +1268,8 @@ registrarVisita($conexion_store);
                     precio_dolar_visible: item.pd,
                     precio_peso_visible: item.pp,
                     precio_bs_visible: item.pb,
-                    precio_costo: item.pc
+                    precio_costo: item.pc,
+                    categorias: item.ca || ''
                 }));
                 
                 fuse = new Fuse(searchItems, {
@@ -1379,6 +1395,9 @@ registrarVisita($conexion_store);
                                 <h6 class="mb-1 fw-semibold text-primary-dark">${item.nombre}</h6>
                                 <div class="d-flex align-items-center gap-2 mb-1">
                                     ${rest}
+                                    <span class="badge bg-light text-muted fw-normal border" style="font-size: 0.7rem;">
+                                        <i class="bi bi-tag small"></i> ${item.ca || item.categorias || 'Sin categoría'}
+                                    </span>
                                 </div>
                                 <div class="d-flex gap-3 small">
                                     <span class="fw-bold text-success">
@@ -1423,7 +1442,36 @@ registrarVisita($conexion_store);
         let isLoading = false;
         let hasMore = true;
         let currentSort = ''; // Sorting parameter
+        let currentCategory = ''; // Category parameter
         const productsGrid = document.getElementById("products-grid");
+
+        // Load Categories into filter
+        (async function loadCategoriesFilter() {
+            try {
+                const res = await fetch('api/get_categories_list.php');
+                const data = await res.json();
+                if (data.success) {
+                    const select = document.getElementById('filter-category');
+                    data.categories.forEach(cat => {
+                        const opt = document.createElement('option');
+                        opt.value = cat.id;
+                        opt.textContent = cat.nombre;
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error("Error cargando categorías para filtro", e);
+            }
+        })();
+
+        // Event listener for category filter
+        document.getElementById('filter-category').addEventListener('change', function() {
+            currentCategory = this.value;
+            currentPage = 1;
+            hasMore = true;
+            showSkeletons();
+            cargarMasProductos();
+        });
 
         // Event listener for sorting dropdown
         document.getElementById('sort-products').addEventListener('change', function() {
@@ -1474,7 +1522,7 @@ registrarVisita($conexion_store);
                 loaderShown = true;
             }, 1000);
             try {
-                const res = await fetch(`api/productos.php?mode=grid&page=${currentPage}&limit=24&order=${currentSort}`);
+                const res = await fetch(`api/productos.php?mode=grid&page=${currentPage}&limit=24&order=${currentSort}&category=${currentCategory}`);
                 const data = await res.json();
 
                 const recompensas = data.recompensas[0];
@@ -1558,6 +1606,11 @@ registrarVisita($conexion_store);
                             <div class="product-body">
                       
                                 <h3 class="product-title" title="${producto.nombre}">${producto.nombre}</h3>
+                                <div class="product-category mb-1">
+                                    <span class="badge bg-light text-muted fw-normal p-0" style="font-size: 0.75rem;">
+                                        <i class="bi bi-tag small"></i> ${producto.categorias || 'Sin categoría'}
+                                    </span>
+                                </div>
                                 
                                 <div class="price-container">
                                     <div class="price-main"><span class="price-dolar">${precio_dolar}</span></div>

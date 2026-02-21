@@ -92,10 +92,14 @@ $mode = $_GET['mode'] ?? 'grid';
 
 if ($mode === 'search_index') {
     // Lightweight query for all products (for Fuse.js)
-    $sql = "SELECT p.id, p.nombre, p.codigo_barras, p.precio_compra, p.cantidad_unidades, p.origen, s.stock, s.porcentaje, p.mayor 
+    $sql = "SELECT p.id, p.nombre, p.codigo_barras, p.precio_compra, p.cantidad_unidades, p.origen, s.stock, s.porcentaje, p.mayor, 
+                   GROUP_CONCAT(c.nombre SEPARATOR ', ') as categorias_nombres
             FROM productos p
             INNER JOIN stock s ON p.id = s.id_producto
+            LEFT JOIN categorias_productos cp ON p.id = cp.id_producto
+            LEFT JOIN categorias c ON cp.id_categoria = c.id AND c.activo = 1
             WHERE p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ?  AND p.origen != 'c' AND s.stock > 0 
+            GROUP BY p.id
             ORDER BY p.nombre ASC";
     
     $stmt = $conexion->prepare($sql);
@@ -116,6 +120,7 @@ if ($mode === 'search_index') {
             'c' => trim($row['codigo_barras']), // 'codigo'
             's' => (int)$row['stock'], // 'stock'
             'm' => $row['mayor'], // 'mayor'
+            'ca' => $row['categorias_nombres'] ?? '', // 'categorias'
             'pd' => $precios['precio_venta_dolar'],
             'pp' => $precios['precio_venta_peso'],
             'pb' => $precios['precio_venta_bs'],
@@ -132,6 +137,8 @@ if ($mode === 'search_index') {
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 24;
 $sort = $_GET['order'] ?? '';
+$categoryId = isset($_GET['category']) ? (int)$_GET['category'] : null;
+
 switch ($sort) {
     case 'name_asc':
         $order = 'p.nombre ASC';
@@ -145,15 +152,33 @@ switch ($sort) {
 }
 $offset = ($page - 1) * $limit;
 
-$sql = "SELECT p.*, s.stock, s.porcentaje, s.id_sucursal
+// SQL construction
+$where = "p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ? AND s.stock > 0 AND p.origen != 'c'";
+$params = [$sucursal, $bss_id];
+$types = "ii";
+
+if ($categoryId) {
+    $where .= " AND p.id IN (SELECT id_producto FROM categorias_productos WHERE id_categoria = ?)";
+    $params[] = $categoryId;
+    $types .= "i";
+}
+
+$sql = "SELECT p.*, s.stock, s.porcentaje, s.id_sucursal, GROUP_CONCAT(c.nombre SEPARATOR ', ') as categorias_nombres
         FROM productos p
         INNER JOIN stock s ON p.id = s.id_producto
-        WHERE p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ? AND s.stock > 0 AND p.origen != 'c'
+        LEFT JOIN categorias_productos cp ON p.id = cp.id_producto
+        LEFT JOIN categorias c ON cp.id_categoria = c.id AND c.activo = 1
+        WHERE {$where}
+        GROUP BY p.id
         ORDER BY {$order}
         LIMIT ? OFFSET ?";
 
+$params[] = $limit;
+$params[] = $offset;
+$types .= "ii";
+
 $stmt = $conexion->prepare($sql);
-$stmt->bind_param("iiii", $sucursal, $bss_id, $limit, $offset);
+$stmt->bind_param($types, ...$params);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -185,6 +210,7 @@ while ($row = $result->fetch_assoc()) {
         'stock' => (int)$row['stock'],
         'mayor' => $row['mayor'],
         'codigo' => trim($row['codigo_barras']),
+        'categorias' => $row['categorias_nombres'] ?? '',
         'precio_dolar_visible' => $precios['precio_venta_dolar'],
         'precio_peso_visible' => $precios['precio_venta_peso'],
         'precio_bs_visible' => $precios['precio_venta_bs'],
@@ -196,15 +222,19 @@ while ($row = $result->fetch_assoc()) {
     ];
 }
 
-$countSql = "
-SELECT COUNT(*) total
-FROM productos p
-INNER JOIN stock s ON p.id = s.id_producto
-WHERE p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ? AND s.stock > 0 AND p.origen != 'c'
-";
+$countSql = "SELECT COUNT(*) total
+             FROM productos p
+             INNER JOIN stock s ON p.id = s.id_producto
+             WHERE {$where}";
+
+// Use same params for count but without limit/offset
+$countParams = array_slice($params, 0, count($params) - 2);
+$countTypes = substr($types, 0, strlen($types) - 2);
 
 $countStmt = $conexion->prepare($countSql);
-$countStmt->bind_param("ii", $sucursal, $bss_id);
+if (!empty($countParams)) {
+    $countStmt->bind_param($countTypes, ...$countParams);
+}
 $countStmt->execute();
 $total = $countStmt->get_result()->fetch_assoc()['total'];
 

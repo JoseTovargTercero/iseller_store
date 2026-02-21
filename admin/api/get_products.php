@@ -14,9 +14,11 @@ $bss_id = 3;   // Default bss_id per logic
 
 $search = $_GET['search'] ?? '';
 
-$sql = "SELECT p.*, s.stock 
+$sql = "SELECT p.*, s.stock, GROUP_CONCAT(c.nombre SEPARATOR ', ') as categorias_nombres
         FROM productos p
         INNER JOIN stock s ON p.id = s.id_producto
+        LEFT JOIN categorias_productos cp ON p.id = cp.id_producto
+        LEFT JOIN categorias c ON cp.id_categoria = c.id AND c.activo = 1
         WHERE p.activo = 0 
           AND s.id_sucursal = ? 
           AND s.bss_id = ? 
@@ -33,7 +35,7 @@ if ($search) {
     $params[] = "%$search%";
 }
 
-$sql .= " ORDER BY p.nombre ASC LIMIT 100"; // Limit to prevent overload
+$sql .= " GROUP BY p.id ORDER BY p.nombre ASC LIMIT 100"; // Limit to prevent overload
 
 $stmt = $conexion->prepare($sql);
 $stmt->bind_param($types, ...$params);
@@ -46,17 +48,13 @@ while ($row = $result->fetch_assoc()) {
     
     // Check if image exists
     $imgName = $row['id'] . '.png';
-    $imgPathRelative = '../assets/img/stock/' . $imgName;
-    $imgPathPublic = '../assets/img/stock/' . $imgName;
-    
-    // Check existence in fs (outside webroot context for check, strictly we know structure)
-    // Actually we can just return path, frontend handles error placeholder
     
     $products[] = [
         'id' => $row['id'],
         'nombre' => $row['nombre'],
         'codigo' => $row['codigo_barras'],
         'stock' => (int)$row['stock'],
+        'categorias' => $row['categorias_nombres'] ?? '',
         'precio_usd' => $precios['precio_venta_dolar'],
         'precio_bs' => $precios['precio_venta_bs'],
         'img_cache_bust' => time() // Trick to force reload image after upload

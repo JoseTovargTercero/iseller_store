@@ -23,6 +23,11 @@ require_once 'session.php';
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'categorias.php' ? 'active fw-bold text-primary' : ''; ?>" href="categorias.php">
+                        <i class="bi bi-tags"></i> Categorías
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'rendimiento.php' ? 'active fw-bold text-primary' : ''; ?>" href="rendimiento.php">
                         <i class="bi bi-graph-up-arrow"></i> Rendimiento
                     </a>

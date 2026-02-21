@@ -53,6 +53,7 @@ requireAdminLogin();
                                 <th>Nombre</th>
                                 <th>Código</th>
                                 <th class="text-center">Stock</th>
+                                <th>Categorías</th>
                                 <th class="text-end">Precio (USD)</th>
                                 <th class="text-end">Precio (Bs)</th>
                                 <th class="text-end pe-3">Acciones</th>
@@ -75,6 +76,30 @@ requireAdminLogin();
             <p class="text-muted">No se encontraron productos</p>
         </div>
 
+    </div>
+
+    <!-- Modal Associate Categories -->
+    <div class="modal fade" id="modalAssociateCategories" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-tags-fill me-2"></i>Asociar Categorías</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="assocProductId">
+                    <p class="text-muted small mb-3">Selecciona las categorías para <strong id="assocProductName"></strong>:</p>
+                    <div id="categoriesList" class="row g-2 overflow-auto" style="max-height: 300px;">
+                        <!-- JS Content -->
+                        <div class="col-12 text-center py-3"><div class="spinner-border text-primary spinner-border-sm"></div></div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-link link-secondary text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary px-4 rounded-pill" id="btnSaveAssociations">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Upload Image -->
