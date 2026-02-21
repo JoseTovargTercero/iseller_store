@@ -530,7 +530,7 @@ registrarVisita($conexion_store);
         <div class="hero-bg" id="hero-bg"></div>
         <div class="hero-overlay" id="hero-overlay"></div>
         <div class="hero-content py-3">
-            <h1 class="hero-title text-white" id="hero-text"> ¡Compras gratis! Cada 5 niveles obtén $5 para gastar en los productos que desees. </h1>
+            <h1 class="hero-title text-white" id="hero-text">¡Compras gratis! Cada 5 niveles obtén $5 para gastar en los productos que desees.</h1>
             <p class="lead mb-4 text-white"><b>Puerto Ayacucho ❤️ Edo Amazonas.</b> <br> <a data-bs-toggle="modal" data-bs-target="#modalUbicacion" class="text-white pointer">Consulta nuestra ubicación</a></p>
 
             <div class="d-flex flex-wrap justify-content-center gap-2">
@@ -1202,27 +1202,67 @@ registrarVisita($conexion_store);
          *  HERO BANNER LOGIC & SCROLL ANIMATION
          * ==========================================
          */
-        // Slider de Texto
-        const heroTexts = [
-            "¡Compra y gana! Acumula puntos y desbloquea descuentos exclusivos.",
-            "¡Hazle el mercado a un familiar! Agrega su dirección y nosotros nos encargamos del resto.",
-            "Sube de nivel y gana: cada 5 niveles recibe recompensas en efectivo para tus compras.",
+      const heroSlides = [
+            { text: "¡Compras gratis! Cada 5 niveles obtén $5 para gastar en los productos que desees.", img: "assets/img/bg-hero.png" },
+            { text: "Sube de nivel invitando a tus amigos, cada referido te da 3 puntos.", img: "assets/img/bg-hero-1.png" },
+            { text: "¡Hazle el mercado a un familiar! Agrega su dirección y nosotros nos encargamos del resto.", img: "assets/img/bg-hero-2.png" },
+            { text: "Sube de nivel y gana: cada 5 niveles recibe recompensas en efectivo para tus compras.", img: "assets/img/bg-hero-3.png" },
         ];
-        let heroTextIndex = 0;
-        const heroTextElement = document.getElementById('hero-text');
-        
-        setInterval(() => {
-            heroTextElement.style.opacity = '0';
-            heroTextElement.style.transform = 'translateY(20px)';
-            
-            setTimeout(() => {
-                heroTextIndex = (heroTextIndex + 1) % heroTexts.length;
-                heroTextElement.innerText = heroTexts[heroTextIndex];
-                heroTextElement.style.opacity = '1';
-                heroTextElement.style.transform = 'translateY(0)';
-            }, 500); // Wait for fade out
-        }, 5000); // Change every 5 seconds
 
+// Precarga imágenes
+heroSlides.forEach(s => {
+    const i = new Image();
+    i.src = s.img;
+});
+
+let heroSlideIndex = 0;
+let isAnimating = false;
+
+const heroTextElement = document.getElementById('hero-text');
+const heroBgElement   = document.getElementById('hero-bg');
+
+const FADE_TIME = 600;
+const SLIDE_TIME = 5000;
+
+function rotateHero() {
+    if (isAnimating || !heroTextElement || !heroBgElement) return;
+
+    isAnimating = true;
+
+    // Fade out
+    heroTextElement.style.opacity = '0';
+    heroTextElement.style.transform = 'translateY(20px)';
+
+    setTimeout(() => {
+        heroSlideIndex = (heroSlideIndex + 1) % heroSlides.length;
+        const slide = heroSlides[heroSlideIndex];
+
+        // Cambio EXACTAMENTE sincronizado
+        heroTextElement.innerText = slide.text;
+        heroBgElement.style.backgroundImage = `url('${slide.img}')`;
+
+        // Fade in
+        heroTextElement.style.opacity = '1';
+        heroTextElement.style.transform = 'translateY(0)';
+
+        setTimeout(() => {
+            isAnimating = false;
+        }, FADE_TIME);
+
+    }, FADE_TIME);
+}
+
+// Arranque estable con timeout recursivo (NO setInterval)
+function startHeroSlider() {
+    setTimeout(function loop() {
+        rotateHero();
+        setTimeout(loop, SLIDE_TIME);
+    }, SLIDE_TIME);
+}
+
+if (heroSlides.length > 1) {
+    startHeroSlider();
+}
         // Scroll Animation
         window.addEventListener('scroll', () => {
             const scrollY = window.scrollY;
