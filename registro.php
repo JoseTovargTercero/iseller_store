@@ -198,7 +198,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .strength-strong { background: #198754; width: 100%; }
     </style>
 </head>
-<body>
+<body class="bg-light">
+    <?php include 'includes/navbar.php'; ?>
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-5">
@@ -287,11 +288,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
                 
-                <div class="text-center mt-4">
-                    <a href="index.php" class="small text-muted text-decoration-none hover-link">
-                        <i class="bi bi-arrow-left"></i> Volver a la tienda
-                    </a>
-                </div>
             </div>
         </div>
     </div>

@@ -89,9 +89,7 @@ $userName = getUserName();
 </head>
 <body data-user-logged-in="true">
 
-    <a href="index.php" id="back-to-store" class="btn btn-light rounded-pill shadow-sm">
-        <i class="bi bi-arrow-left me-2"></i> Volver a la tienda
-    </a>
+    <?php include 'includes/navbar.php'; ?>
 
     <?php include 'assets/components/chat.html'; ?>
 

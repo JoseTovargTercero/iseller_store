@@ -71,7 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .login-card { border: none; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); background: white; }
     </style>
 </head>
-<body>
+<body class="bg-light">
+    <?php include 'includes/navbar.php'; ?>
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-5 col-lg-4">

@@ -24,6 +24,16 @@ $getUserLevel = getUserLevel();
 if (@$getUserLevel) {
     $nivelUsuario = $getUserLevel[0];
     $puntosUsuario = $getUserLevel[1];
+    
+    // Fetch foto separately as getUserLevel doesn't return it
+    $stmtFoto = $conexion_store->prepare("SELECT foto FROM usuarios WHERE id = ?");
+    $uid = getUserId();
+    $stmtFoto->bind_param("i", $uid);
+    $stmtFoto->execute();
+    $resFoto = $stmtFoto->get_result();
+    $userFotoRow = $resFoto->fetch_assoc();
+    $userFoto = $userFotoRow['foto'] ?? null;
+    $stmtFoto->close();
 }
 
 $nombreCompleto = htmlspecialchars(getUserName());
@@ -771,37 +781,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body data-user-logged-in="<?php echo isLoggedIn() ? 'true' : 'false'; ?>">
-    <!-- Navbar (Same as index) -->
-    <nav class="navbar navbar-custom fixed-top">
-        <div class="container-fluid d-flex align-items-center justify-content-between px-3 px-md-5">
-            <!-- Left: Logo -->
-            <a class="navbar-brand" href="index.php">
-                <i class="bi bi-shop-window text-success"></i>
-                <span style="color: var(--primary-color);">iSeller</span> <span style="color: var(--text-primary);">Store</span>
-            </a>
-
-            <!-- Right: Actions -->
-            <div class="header-actions d-flex align-items-center gap-3">
-                 <div class="dropdown">
-                    <?php if (isLoggedIn()): ?>
-                        <button class="btn-icon" data-bs-toggle="dropdown" title="Mi Cuenta">
-                            <i class="bi bi-person"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end custom-dropdown-menu">
-                            <li><h6 class="dropdown-header"><?php echo htmlspecialchars(getUserName()); ?></h6></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="checkout.php"><i class="bi bi-cart-check me-2"></i> Checkout</a></li>
-                            <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
-                        </ul>
-                    <?php else: ?>
-                        <a href="login.php" class="btn-icon" title="Iniciar Sesión">
-                            <i class="bi bi-person"></i>
-                        </a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- Navbar -->
+    <?php include 'includes/navbar.php'; ?>
 
     <div class="checkout-container">
         <?php if (!isLoggedIn()): ?>

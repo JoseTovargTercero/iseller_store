@@ -37,7 +37,7 @@ $loyaltyData = [
 if (isLoggedIn()) {
     $uid = getUserId();
     // Usamos conexion_store que es donde está la tabla usuarios según checkout.php
-    $stmtLoyalty = $conexion_store->prepare("SELECT puntos, nivel FROM usuarios WHERE id = ?");
+    $stmtLoyalty = $conexion_store->prepare("SELECT puntos, nivel, foto FROM usuarios WHERE id = ?");
     $stmtLoyalty->bind_param("i", $uid);
     $stmtLoyalty->execute();
     $resLoyalty = $stmtLoyalty->get_result();
@@ -56,7 +56,8 @@ if (isLoggedIn()) {
             'nivel' => $nivel,
             'progreso' => $progreso,
             'porcentaje' => $porcentaje,
-            'falta' => $falta
+            'falta' => $falta,
+            'foto' => $rowLoyalty['foto']
         ];
     }
     $stmtLoyalty->close();
@@ -522,102 +523,7 @@ registrarVisita($conexion_store);
 
 <body class="bg-light" data-user-logged-in="<?php echo isLoggedIn() ? 'true' : 'false'; ?>">
     <!-- Navbar -->
-    <nav class="navbar navbar-custom fixed-top" id="navbar">
-        <div class="container-fluid d-flex align-items-center justify-content-between px-3 px-md-5">
-            <!-- Left: Logo -->
-            <a class="navbar-brand" href="#">
-                <i class="bi bi-shop-window text-success"></i>
-                <span style="color: var(--primary-color);">iSeller</span> <span style="color: var(--text-primary);">Store</span>
-            </a>
-
-      
-            <!-- Center: Search (Hidden on small mobile) -->
-            <div class="d-none d-md-flex flex-grow-1 justify-content-center mx-4">
-                <div class="header-search-container">
-                    <i class="bi bi-search text-muted"></i>
-                    <input type="text" class="header-search-input" id="search" placeholder="Buscar productos..." autocomplete="off">
-                </div>
-                <!-- Search Results Dropdown -->
-                <div id="search-results" class="search-results-container"></div>
-            </div>
-
-            <!-- Right: Actions -->
-            <div class="header-actions d-flex align-items-center gap-3">
-             <?php if (isLoggedIn()): ?>
-                <div class="reward-container position-relative hide" id="reward-dropdown">
-                    <button class="btn-icon btn-reward" data-bs-toggle="modal" data-bs-target="#modalRecompensas" title="Tienes recompensas">
-                        <i class="bi bi-gift-fill"></i>
-                        <span class="badge bg-danger rounded-circle badge-reward" id="badge-reward">1</span>
-                    </button>
-                </div>
-            <?php endif; ?>
-
-                <button class="btn-icon" data-bs-toggle="modal" data-bs-target="#modalUbicacion" title="Nuestra Ubicación">
-                    <i class="bi bi-geo-alt"></i>
-                </button>
-
-
-                <div class="dropdown">
-                    <?php if (isLoggedIn()): ?>
-                        <button class="btn-icon" data-bs-toggle="dropdown" title="Mi Cuenta">
-                            <i class="bi bi-person"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end custom-dropdown-menu">
-                            <li><h6 class="dropdown-header"><?php echo htmlspecialchars(getUserName()); ?></h6></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="perfil.php"><i class="bi bi-person-circle me-2"></i> Mi Perfil</a></li>
-                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="shareReferralJS()"><i class="bi bi-share me-2"></i> Compartir Código de referido</a></li>
-                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSavedCarts()"><i class="bi bi-folder-check me-2"></i> Cargar Carrito</a></li>
-                            <li><a class="dropdown-item text-success fw-bold" href="iseller_store.apk" download><i class="bi bi-android2 me-2"></i> Descargar App</a></li>
-                            <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
-                        </ul>
-                    <?php else: ?>
-                        <a href="login.php" class="btn-icon" title="Iniciar Sesión">
-                            <i class="bi bi-person"></i>
-                        </a>
-                    <?php endif; ?>
-                </div>
-
-                <?php if (isLoggedIn()): ?>
-                <a href="perfil.php?tab=orders" class="btn-icon" title="Mis Compras">
-                    <i class="bi bi-bag-check"></i>
-                </a>
-                <?php endif; ?>
-
-                <div class="cart-container">
-                    <button class="btn-icon btn-cart position-relative" id="cartDropdown" data-bs-toggle="modal" data-bs-target="#modalCarrito">
-                        <i class="bi bi-cart"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm border border-light" id="cart-count">
-                            0
-                        </span>
-                    </button>
-                </div>
-
-                <!-- Search Toggle Button (Mobile Only) -->
-                <button class="btn-icon d-md-none" id="btn-search-toggle" title="Buscar">
-                    <i class="bi bi-search"></i>
-                </button>
-            </div>
-        </div>
-        
-        <!-- Mobile Search Overlay (Animated) -->
-        <div id="mobile-search-overlay" class="mobile-search-overlay d-md-none">
-             <div class="header-search-container w-100">
-                <i class="bi bi-search text-muted"></i>
-                <input type="text" class="header-search-input" id="search-mobile" placeholder="Buscar productos..." autocomplete="off">
-                <button class="btn border-0 p-0 ms-2" id="btn-search-close">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-             <!-- Mobile Search Results -->
-             <div id="search-results-mobile" class="search-results-container"></div>
-        </div>
-
-        <!-- Sticky Progress Bar (Hidden by default) -->
-        <div id="navbar-progress-container" class="navbar-progress">
-            <div class="navbar-progress-bar" style="width: 0%"></div>
-        </div>
-    </nav>
+     <?php include 'includes/navbar.php'; ?>
      
     <!-- Hero Banner (Dynamic) -->
     <section class="hero-section">

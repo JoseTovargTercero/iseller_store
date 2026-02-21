@@ -24,89 +24,254 @@ $userName = getUserName();
     <link rel="stylesheet" href="assets/css/chat.css">
     
     <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        
+       
         .profile-header {
-          background: linear-gradient(135deg, #6fb07f 0%, #5aa773 60%, #4f9e6a 100%);
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 3rem 0;
+            position: relative;
+            overflow: visible;
         }
-        
+
+        .header-title-section {
+            margin-bottom: 2rem;
+        }
+
+        .header-title-section h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .header-title-section p {
+            font-size: 1.1rem;
+        }
+
+        .profile-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: -2px 13px 20px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .profile-avatar-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
         .profile-avatar {
-            width: 100px;
-            height: 100px;
-            background: white;
+            width: 150px;
+            height: 150px;
+            background: #a3ddad;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
-            color: rgb(111, 175, 122);
-            font-weight: bold;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-size: 4rem;
+            color: white;
+            font-weight: 800;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 0 4px #64936c;
         }
-        
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: transform 0.2s, box-shadow 0.2s;
-            border: 1px solid #e5e7eb;
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
-        
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        }
-        
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
+
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 40px;
+            height: 40px;
+            background: #6faf7a;
+            color: white;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 10;
+            border: 3px solid #ffffff;
+        }
+
+        .avatar-upload-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .user-info-section h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-bio {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
+            max-width: 600px;
+        }
+
+        .badge-pro {
+            background: #1e3a8a;
+            color: #93c5fd;
+            padding: 0.35rem 1rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .badge-verified {
+            background: #6faf7a;
+            color: #ffffff;
+            padding: 0.35rem 1rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem 1.5rem;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .contact-item i {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .btn-edit-profile {
+            background: #2563eb;
+            border: none;
+            padding: 0.625rem 1.25rem;
+            border-radius: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .btn-edit-profile:hover {
+            background: #1d4ed8;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3rem;
+            padding-top: 2.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .stat-item {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .stats-row {
+                flex-direction: column;
+                gap: 2rem;
+            }
+            .profile-card {
+                padding: 1.5rem;
+            }
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
         }
         
+        .stat-card {
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 2rem;
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1.25rem;
+        }
+
         .stat-icon.green {
-            background: #ECFDF5;
-            color: rgb(111, 175, 122);
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
         }
         
         .stat-icon.blue {
-            background: #EFF6FF;
-            color: #3B82F6;
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
         }
         
         .stat-icon.yellow {
-            background: #FEF3C7;
-            color: #F59E0B;
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .nav-tabs {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 2rem;
+            margin-bottom: 2rem;
         }
         
         .nav-tabs .nav-link {
-            color: #6b7280;
+            color: #94a3b8;
             border: none;
-            border-bottom: 3px solid transparent;
-            font-weight: 500;
-            padding: 1rem 1.5rem;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            padding: 1rem 0;
+            background: transparent;
+            font-size: 0.95rem;
+            transition: all 0.2s;
         }
         
         .nav-tabs .nav-link:hover {
-            border-bottom-color: #d1d5db;
-            color: #374151;
+            color: white;
         }
         
         .nav-tabs .nav-link.active {
-            color: rgb(111, 175, 122);
-            border-bottom-color: rgb(111, 175, 122);
-            background: none;
+            color: #2563eb;
+            border-bottom: 2px solid #2563eb;
+            background: transparent;
         }
         
         .progress-bar-custom {
@@ -125,33 +290,34 @@ $userName = getUserName();
         }
         
         .reward-card {
-            background: white;
+            
             border-radius: 12px;
-            padding: 1.25rem;
+            padding: 1.5rem;
             margin-bottom: 1rem;
-            border: 2px solid #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.2s;
         }
         
         .reward-card.disponible {
-            border-color: rgb(111, 175, 122);
-            background: linear-gradient(to right, #f0fdf4, white);
+            border-left: 4px solid #10b981;
+            background: rgba(16, 185, 129, 0.05);
         }
         
         .reward-card.usada {
-            opacity: 0.6;
+            opacity: 0.5;
         }
         
         .reward-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateX(5px);
         }
         
-    .order-card{
-    border:1px solid #eee;
-    border-radius:14px;
-    box-shadow:0 6px 16px rgba(0,0,0,.05);
-    background:#fff;
-}
+        .order-card {
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s;
+        }
 
 /* ===== Timeline ===== */
 
@@ -320,13 +486,16 @@ $userName = getUserName();
         margin-top: 135px !important;
     }
     .profile-header {
-        margin-top: 120px !important;
+        margin-top: 140px !important; /* Increased for stacked mobile navbar */
     }
 }
 
 @media (min-width: 481px) and (max-width: 768px) {
     /* En móvil/tablet el navbar es de 1 fila (~70px de alto) */
     .container.pb-5 {
+        margin-top: 80px !important;
+    }
+    .profile-header {
         margin-top: 80px !important;
     }
 }
@@ -353,7 +522,7 @@ $userName = getUserName();
                     <i class="bi bi-bag-check"></i>
                 </a>
                 <div class="dropdown">
-                    <button class="btn-icon" data-bs-toggle="dropdown" title="Mi Cuenta">
+                    <button class="btn-icon p-0 overflow-hidden" data-bs-toggle="dropdown" title="Mi Cuenta" id="nav-user-btn">
                         <i class="bi bi-person"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end custom-dropdown-menu">
@@ -369,23 +538,74 @@ $userName = getUserName();
     </nav>
 
     <!-- Profile Header -->
-    <div class="profile-header hide" id="profile-header-section">
+    <div class="profile-header h-auto mt-5" id="profile-header-section">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <div class="profile-avatar" id="profile-avatar">
-                        <div class="skeleton" style="width: 100px; height: 100px; border-radius: 50%;"></div>
+          
+
+            <div class="profile-card">
+                <div class="row align-items-start">
+                    <div class="col-md-auto mb-4 mb-md-0 text-center text-md-start">
+                        <div class="profile-avatar-wrapper">
+                            <div class="profile-avatar" id="profile-avatar">
+                                <div class="skeleton" style="width: 100%; height: 100%; border-radius: 50%;"></div>
+                            </div>
+                            <button class="avatar-upload-btn" onclick="document.getElementById('avatar-input').click()" title="Cambiar foto de perfil">
+                                <i class="bi bi-camera-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                    
+                    <div class="col-md user-info-section px-md-4">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                            <div>
+                                <h2 class="mb-2" id="profile-full-name">
+                                    <div class="skeleton" style="width: 250px; height: 35px;"></div>
+                                </h2>
+                                <div class="d-flex gap-2 flex-wrap mb-3">
+                                    <span class="badge-pro">Miembro <span id="member-level-text">...</span></span>
+                                    <span class="badge-verified"><i class="bi bi-patch-check-fill me-1"></i> Verificado</span>
+                                </div>
+                            </div>
+                            <button class="hide btn-edit-profile" onclick="Notiflix.Report.info('Editar Perfil', 'Próximamente: Podrás editar tus datos directamente desde aquí.', 'Entendido')">
+                                <i class="bi bi-upload"></i> Editar perfil
+                            </button>
+                        </div>
+
+                        <p class="user-bio" id="user-bio-placeholder">
+                            Cliente basico de iSeller Store. Disfrutando de las ofertas iniciales y recompensas por cada compra realizada en nuestra tienda.
+                        </p>
+
+                        <div class="contact-grid">
+                            <div class="contact-item">
+                                <i class="bi bi-envelope"></i>
+                                <span id="profile-email">Cargando...</span>
+                            </div>
+                            <div class="contact-item">
+                                <i class="bi bi-geo-alt"></i>
+                                <span id="profile-location">Venezuela</span>
+                            </div>
+                            <div class="contact-item">
+                                <i class="bi bi-calendar3"></i>
+                                <span>Se unió en <span id="member-since-date">...</span></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col">
-                    <h2 class="mb-1 text-white">
-                        <div class="skeleton" style="width: 200px; height: 32px;"></div>
-                    </h2>
-                    <p class="mb-2 opacity-75" id="profile-email">
-                        <div class="skeleton" style="width: 250px; height: 20px;"></div>
-                    </p>
-                    <div id="profile-level">
-                        <div class="skeleton" style="width: 150px; height: 40px; border-radius: 99px;"></div>
+
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-level">0</div>
+                        <div class="stat-label">Nivel</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-purchases">0</div>
+                        <div class="stat-label">Compras</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-savings">$0</div>
+                        <div class="stat-label">Dinero ahorrado</div>
                     </div>
                 </div>
             </div>
@@ -393,7 +613,7 @@ $userName = getUserName();
     </div>
 
     <!-- Main Content -->
-    <div class="container pb-5" style="margin-top: 90px;">
+    <div class="container pb-5">
 
    
         <!-- Referral Banner -->
@@ -568,24 +788,24 @@ $userName = getUserName();
                     
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nombre</label>
-                            <input type="text" class="form-control" id="info-nombre" readonly>
+                            <label class="form-label fw-semibold text-muted">Nombre</label>
+                            <input type="text" class="form-control  border-secondary text-white" id="info-nombre" readonly>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Email</label>
-                            <input type="email" class="form-control" id="info-email" readonly>
+                            <label class="form-label fw-semibold text-muted">Email</label>
+                            <input type="email" class="form-control  border-secondary text-white" id="info-email" readonly>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nivel</label>
-                            <input type="text" class="form-control" id="info-nivel" readonly>
+                            <label class="form-label fw-semibold text-muted">Nivel</label>
+                            <input type="text" class="form-control  border-secondary text-white" id="info-nivel" readonly>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Puntos</label>
-                            <input type="text" class="form-control" id="info-puntos" readonly>
+                            <label class="form-label fw-semibold text-muted">Puntos</label>
+                            <input type="text" class="form-control  border-secondary text-white" id="info-puntos" readonly>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Miembro desde</label>
-                            <input type="text" class="form-control" id="info-fecha" readonly>
+                            <label class="form-label fw-semibold text-muted">Miembro desde</label>
+                            <input type="text" class="form-control  border-secondary text-white" id="info-fecha" readonly>
                         </div>
                     </div>
                     
@@ -693,6 +913,7 @@ $userName = getUserName();
 
     <!-- Bootstrap Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-aio-3.2.8.min.js"></script>
     
     <script>
         // Fetch profile data
@@ -708,15 +929,39 @@ $userName = getUserName();
                 }
                 
                 // Update Header
-                const initials = data.user.nombre.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-                document.getElementById('profile-avatar').innerHTML = initials;
+                const avatarContainer = document.getElementById('profile-avatar');
+                if (data.user.foto) {
+                    avatarContainer.innerHTML = `<img src="assets/img/profiles/${data.user.foto}" class="avatar-img" id="avatar-preview">`;
+                } else {
+                    const initials = data.user.nombre.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                    avatarContainer.innerHTML = initials;
+                }
+
+                // Update Navbar Photo
+                const navUserBtn = document.getElementById('nav-user-btn');
+                if (navUserBtn) {
+                    if (data.user.foto) {
+                        navUserBtn.innerHTML = `<img src="assets/img/profiles/${data.user.foto}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 50%;">`;
+                    } else {
+                        navUserBtn.innerHTML = `<i class="bi bi-person"></i>`;
+                    }
+                }
+
+                document.getElementById('profile-full-name').textContent = data.user.nombre;
                 document.getElementById('profile-name').textContent = data.user.nombre;
                 document.getElementById('profile-email').textContent = data.user.email;
-                document.getElementById('profile-level').innerHTML = `
-                    <span class="level-badge-large">
-                        <i class="bi bi-star-fill"></i> Nivel ${data.user.nivel}
-                    </span>
-                `;
+                document.getElementById('member-since-date').textContent = new Date(data.user.created_at).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+                document.getElementById('member-level-text').textContent = (data.user.nivel > 5 ? 'Pro' : 'Básico');
+                
+                // Stats
+                document.getElementById('stat-level').textContent = data.user.nivel;
+                document.getElementById('stat-purchases').textContent = data.stats.total_compras;
+                document.getElementById('stat-savings').textContent = '$' + (data.stats.total_ahorrado || 0).toFixed(2);
+
+                if (data.addresses && data.addresses.length > 0) {
+                    const primary = data.addresses.find(a => a.es_principal == 1) || data.addresses[0];
+                    document.getElementById('profile-location').textContent = primary.direccion.split(',')[0];
+                }
                 
                 // Update Stats
                 document.getElementById('stat-puntos').textContent = data.user.puntos.toFixed(2);
@@ -789,6 +1034,35 @@ $userName = getUserName();
                 
                 // Update Addresses
                 renderAddresses(data.addresses);
+
+                // Setup Avatar Upload
+                document.getElementById('avatar-input').onchange = async function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const formData = new FormData();
+                    formData.append('image', file);
+
+                    try {
+                        Notiflix.Loading.standard('Subiendo imagen...');
+                        const res = await fetch('api/upload_profile_image.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await res.json();
+                        Notiflix.Loading.remove();
+
+                        if (result.success) {
+                            Notiflix.Notify.success('Foto de perfil actualizada');
+                            loadProfileData(); // Reload to show new image
+                        } else {
+                            Notiflix.Notify.failure(result.message || 'Error al subir imagen');
+                        }
+                    } catch (err) {
+                        Notiflix.Loading.remove();
+                        Notiflix.Notify.failure('Error de red');
+                    }
+                };
                 
             } catch (err) {
                 console.error('ERROR COMPLETO:', err.message || err);

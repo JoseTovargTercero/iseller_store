@@ -14,7 +14,7 @@ $user_id = getUserId();
 try {
     // 1. Información del Usuario
     $stmtUser = $conexion_store->prepare("
-        SELECT id, nombre, email, puntos, nivel, creado_en, referral_code 
+        SELECT id, nombre, email, puntos, nivel, creado_en, referral_code, foto 
         FROM usuarios 
         WHERE id = ?
     ");
@@ -98,7 +98,8 @@ try {
         SELECT 
             COUNT(*) as total_compras,
             SUM(valor_compra) as total_gastado,
-            SUM(puntos_generados) as total_puntos_ganados
+            SUM(puntos_generados) as total_puntos_ganados,
+            SUM(ahorrado) as total_ahorrado
         FROM compras_por_usuarios
         WHERE usuario_id = ?
     ");
@@ -122,6 +123,7 @@ try {
             'falta' => round($falta, 2),
             'falta' => round($falta, 2),
             'referral_code' => $userData['referral_code'],
+            'foto' => $userData['foto'],
             'created_at' => $userData['creado_en']
         ],
         'addresses' => $addresses,
@@ -130,7 +132,8 @@ try {
         'stats' => [
             'total_compras' => intval($stats['total_compras']),
             'total_gastado' => floatval($stats['total_gastado']),
-            'total_puntos_ganados' => floatval($stats['total_puntos_ganados'])
+            'total_puntos_ganados' => floatval($stats['total_puntos_ganados']),
+            'total_ahorrado' => floatval($stats['total_ahorrado'])
         ]
     ]);
 
