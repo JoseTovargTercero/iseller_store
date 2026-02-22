@@ -781,8 +781,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body data-user-logged-in="<?php echo isLoggedIn() ? 'true' : 'false'; ?>">
-    <!-- Navbar -->
     <?php include 'includes/navbar.php'; ?>
+    <?php if (date('w') == 0): ?>
+        <div class="alert alert-danger text-center mb-0 rounded-0 shadow-sm" style="font-weight: bold; border-left: 0; border-right: 0;">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            Hoy es domingo y no laboramos. Su pedido estará disponible mañana lunes a partir de las 8am.
+        </div>
+        <style>
+            body { padding-top: 130px !important; }
+            @media (max-width: 576px) {
+                body { padding-top: 150px !important; }
+            }
+        </style>
+    <?php endif; ?>
+    <!-- Navbar -->
 
     <div class="checkout-container">
         <?php if (!isLoggedIn()): ?>
