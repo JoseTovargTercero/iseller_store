@@ -60,14 +60,24 @@ function setupListeners() {
 
     // Search
     let debounceTimer;
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => loadOrders(), 300);
-    });
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => loadOrders(), 300);
+        });
+    }
 
     // Modal Actions
-    document.getElementById('btnConfirmDeliveryAction').addEventListener('click', confirmDelivery);
-    document.getElementById('btnConfirmRejectAction').addEventListener('click', confirmReject);
+    const btnConfirmDelivery = document.getElementById('btnConfirmDeliveryAction');
+    if (btnConfirmDelivery) {
+        btnConfirmDelivery.addEventListener('click', confirmDelivery);
+    }
+
+    const btnConfirmReject = document.getElementById('btnConfirmRejectAction');
+    if (btnConfirmReject) {
+        btnConfirmReject.addEventListener('click', confirmReject);
+    }
 }
 
 async function loadStats() {
@@ -87,7 +97,7 @@ async function loadStats() {
 function renderStats(allStats, period) {
     const stats = allStats[period];
     const container = document.getElementById('stats-container');
-    
+    if (!container) return;
     // Status badges class mapping
     const statusClasses = {
         'pendiente': 'warning',
@@ -175,13 +185,18 @@ async function loadOrders() {
     const loadingEl = document.getElementById('orders-loading');
     const emptyEl = document.getElementById('orders-empty');
 
+    if (!tbody || !loadingEl || !emptyEl) return;
+
     // Reset view
     tbody.innerHTML = '';
     loadingEl.classList.remove('d-none');
     emptyEl.classList.add('d-none');
 
-    const statusFilter = document.querySelector('input[name="statusFilter"]:checked').value;
-    const search = document.getElementById('searchInput').value;
+    const statusFilterEl = document.querySelector('input[name="statusFilter"]:checked');
+    const statusFilter = statusFilterEl ? statusFilterEl.value : '';
+    
+    const searchEl = document.getElementById('searchInput');
+    const search = searchEl ? searchEl.value : '';
 
     const url = new URL('api/get_orders.php', window.location.href);
     if (statusFilter) url.searchParams.append('status', statusFilter);

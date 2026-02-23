@@ -18,7 +18,14 @@ requireAdminLogin();
     <link rel="stylesheet" href="assets/css/admin.css">
     <!-- Notiflix -->
     <link rel="stylesheet" href="../assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-3.2.7.min.css" />
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@latest/Control.FullScreen.css" />
     <meta name="csrf-token" content="<?php echo getCSRFToken(); ?>">
+    <style>
+        #mapLocations { height: 500px; width: 100%; border-radius: 12px; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+    </style>
 </head>
 <body>
     
@@ -26,10 +33,35 @@ requireAdminLogin();
 
     <div class="container-fluid px-4 py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 fw-bold mb-0">Gestión de Clientes</h1>
-            <div class="input-group" style="max-width: 400px;">
-                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control border-start-0 ps-0" id="searchCustomer" placeholder="Buscar por nombre, email o teléfono...">
+            <div>
+                <h1 class="h3 fw-bold mb-0">Gestión de Clientes</h1>
+                <p class="text-muted small mb-0">Administra tus usuarios y visualiza su actividad</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm" onclick="openMapModal()">
+                    <i class="bi bi-geo-alt-fill"></i> Ver Mapa de Ubicaciones
+                </button>
+                <div class="input-group" style="max-width: 400px;">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="searchCustomer" placeholder="Buscar por nombre, email o teléfono...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Registration Chart Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">Nuevos Registros (Últimos 15 días)</h5>
+                        <button class="btn btn-light btn-sm rounded-circle" onclick="loadRegistrationStats()" title="Recargar gráfico">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="registrationChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -123,16 +155,42 @@ requireAdminLogin();
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Modal Map Locations -->
+    <div class="modal fade" id="modalMapLocations" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-map me-2"></i>Ubicaciones de Clientes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="mapLocations"></div>
+                </div>
+                <div class="modal-footer border-0">
+                    <p class="text-muted small me-auto"><i class="bi bi-info-circle me-1"></i>Se muestran las ubicaciones principales de cada usuario.</p>
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Notiflix JS -->
     <script src="../assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-3.2.7.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.fullscreen@latest/Control.FullScreen.js"></script>
     <!-- Add this to load common logout handling if not in a separate js -->
     <script src="assets/js/app.js"></script>
     <script>
+        let regChart = null;
+        let locationsMap = null;
+
         document.addEventListener('DOMContentLoaded', () => {
             loadCustomers();
             loadStats();
+            loadRegistrationStats();
             
             let searchTimer;
             document.getElementById('searchCustomer').oninput = (e) => {
@@ -371,6 +429,117 @@ requireAdminLogin();
                 }
             } catch (e) {
                 content.innerHTML = '<div class="alert alert-danger">Error al cargar detalles</div>';
+            }
+        }
+
+        async function loadRegistrationStats() {
+            try {
+                const res = await fetch('api/get_registrations_stats.php');
+                const data = await res.json();
+                
+                if (data.success) {
+                    renderRegistrationChart(data.chart_data);
+                }
+            } catch (e) {
+                console.error('Error loading registration stats:', e);
+            }
+        }
+
+        function renderRegistrationChart(chartData) {
+            const ctx = document.getElementById('registrationChart').getContext('2d');
+            
+            if (regChart) regChart.destroy();
+
+            regChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Nuevos Usuarios',
+                        data: chartData.data,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#2563eb',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, precision: 0 }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        async function openMapModal() {
+            const modal = new bootstrap.Modal(document.getElementById('modalMapLocations'));
+            modal.show();
+
+            // Init map after modal is shown to avoid size issues
+            document.getElementById('modalMapLocations').addEventListener('shown.bs.modal', async () => {
+                if (!locationsMap) {
+                    locationsMap = L.map('mapLocations', {
+                        fullscreenControl: true,
+                        fullscreenControlOptions: {
+                            position: 'topleft'
+                        }
+                    }).setView([10.4806, -66.8983], 12);
+
+                    L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                        maxZoom: 20,
+                        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                        attribution: '&copy; Google Maps'
+                    }).addTo(locationsMap);
+                }
+                
+                setTimeout(() => {
+                    locationsMap.invalidateSize();
+                    loadUserLocations();
+                }, 100);
+            }, { once: true });
+        }
+
+        async function loadUserLocations() {
+            try {
+                const res = await fetch('api/get_customers_locations.php');
+                const data = await res.json();
+                
+                if (data.success && data.locations.length > 0) {
+                    const markers = L.featureGroup();
+                    
+                    data.locations.forEach(loc => {
+                        const marker = L.marker([loc.lat, loc.lng])
+                            .bindPopup(`
+                                <div class="p-2">
+                                    <h6 class="fw-bold mb-1">${loc.nombre}</h6>
+                                    <p class="small text-muted mb-0">${loc.direccion}</p>
+                                </div>
+                            `);
+                        markers.addLayer(marker);
+                    });
+                    
+                    markers.addTo(locationsMap);
+                    locationsMap.fitBounds(markers.getBounds(), { padding: [20, 20] });
+                }
+            } catch (e) {
+                console.error('Error loading locations:', e);
+                Notiflix.Notify.failure('Error al cargar ubicaciones');
             }
         }
     </script>
