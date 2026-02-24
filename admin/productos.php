@@ -49,8 +49,7 @@ requireAdminLogin();
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light text-muted small text-uppercase">
                             <tr>
-                                <th class="ps-3">Imagen</th>
-                                <th>Nombre</th>
+                                <th class="ps-3">Nombre</th>
                                 <th>Código</th>
                                 <th class="text-center">Stock</th>
                                 <th>Categorías</th>
@@ -102,31 +101,6 @@ requireAdminLogin();
         </div>
     </div>
 
-    <!-- Modal Upload Image -->
-    <div class="modal fade" id="modalUploadImage" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Actualizar Imagen</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <input type="hidden" id="uploadProductId">
-                    <div class="mb-3">
-                        <img id="previewImage" src="" class="img-fluid rounded mb-3" style="max-height: 200px; display: none;">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-start w-100 fw-bold">Seleccionar archivo (PNG/JPG)</label>
-                        <input class="form-control" type="file" id="imageInput" accept="image/png, image/jpeg">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btnConfirmUpload">Subir Imagen</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
