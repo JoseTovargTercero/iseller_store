@@ -24,23 +24,6 @@ function setupProductListeners() {
             window.location.href = 'login.php';
         });
     }
-
-    // Upload
-    document.getElementById('btnConfirmUpload').addEventListener('click', uploadImage);
-    
-    // Preview Logic
-    document.getElementById('imageInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = document.getElementById('previewImage');
-                img.src = e.target.result;
-                img.style.display = 'inline-block';
-            }
-            reader.readAsDataURL(file);
-        }
-    });
 }
 
 async function loadProducts() {
@@ -83,15 +66,9 @@ function renderProducts(products) {
     let html = '';
     
     products.forEach(p => {
-        // Construct image path with cache bust
-        const imgSrc = `../assets/img/stock/${p.id}.png?v=${p.img_cache_bust}`;
-        
         html += `
             <tr class="animate-fade-in">
                 <td class="ps-3">
-                    <img src="${imgSrc}" class="product-img-thumb">
-                </td>
-                <td>
                     <div class="fw-bold text-dark">${p.nombre}</div>
                 </td>
                 <td><span class="text-muted small font-monospace">${p.codigo}</span></td>
@@ -102,9 +79,6 @@ function renderProducts(products) {
                 <td class="text-end pe-3">
                     <button class="btn btn-light btn-sm text-dark btn-associate" data-id="${p.id}" data-nombre="${p.nombre.replace(/"/g, '&quot;')}" title="Asociar Categorías">
                         <i class="bi bi-tag"></i>
-                    </button>
-                    <button class="btn btn-light btn-sm text-primary" onclick="openUploadModal(${p.id})" title="Cambiar Foto">
-                        <i class="bi bi-image"></i>
                     </button>
                 </td>
             </tr>
@@ -196,55 +170,6 @@ document.getElementById('btnSaveAssociations')?.addEventListener('click', async 
     }
 });
 
-window.openUploadModal = (id) => {
-    document.getElementById('uploadProductId').value = id;
-    document.getElementById('imageInput').value = ''; // Reset file
-    document.getElementById('previewImage').style.display = 'none';
-    
-    uploadModal = new bootstrap.Modal(document.getElementById('modalUploadImage'));
-    uploadModal.show();
-}
-
-async function uploadImage() {
-    const id = document.getElementById('uploadProductId').value;
-    const fileInput = document.getElementById('imageInput');
-    
-    if (fileInput.files.length === 0) {
-        showToast("Selecciona una imagen", "error");
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('id', id);
-    formData.append('image', fileInput.files[0]);
-
-    // Disable button
-    const btn = document.getElementById('btnConfirmUpload');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Subiendo...';
-
-    try {
-        const res = await fetch('api/upload_product_image.php', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            showToast("Imagen actualizada correctamente", "success");
-            uploadModal.hide();
-            loadProducts(); // Reload to see new image
-        } else {
-            showToast(data.message || "Error al subir", "error");
-        }
-    } catch (e) {
-        showToast("Error de conexión", "error");
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
-}
 
 
 function showToast(msg, type = 'info') {
