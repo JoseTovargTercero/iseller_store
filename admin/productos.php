@@ -101,6 +101,36 @@ requireAdminLogin();
         </div>
     </div>
 
+    <!-- Modal Upload Image -->
+    <div class="modal fade" id="modalUploadImage" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-image me-2"></i>Cargar Imagen</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="uploadProductId">
+                    <p class="text-muted small mb-3">Sube una imagen para <strong id="uploadProductName"></strong>:</p>
+                    
+                    <div class="text-center mb-4">
+                        <img id="imgUploadPreview" src="../assets/img/no-images.png" class="img-thumbnail" style="max-width: 200px; height: 200px; object-fit: contain;">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="inputProductImage" class="form-label small fw-bold">Seleccionar Archivo</label>
+                        <input class="form-control" type="file" id="inputProductImage" accept="image/*">
+                        <div class="form-text">Formatos recomendados: JPG, PNG, WebP.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-link link-secondary text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary px-4 rounded-pill" id="btnDoUpload">Subir Imagen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
