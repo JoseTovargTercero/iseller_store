@@ -232,7 +232,10 @@ document.getElementById('btnDoUpload')?.addEventListener('click', async () => {
     formData.append('image', file);
 
     try {
-        const res = await fetch('api/upload_product_image.php', {
+        const url = new URL('api/upload_product_image.php', window.location.href);
+        url.searchParams.append('id', id); // Redundancy for better server handling
+        
+        const res = await fetch(url, {
             method: 'POST',
             body: formData
         });
@@ -240,6 +243,7 @@ document.getElementById('btnDoUpload')?.addEventListener('click', async () => {
         // Try to parse as JSON, handle potential PHP errors/non-JSON response
         let data;
         const text = await res.text();
+        console.log("Raw response from server:", text); // Debugging
         try {
             data = JSON.parse(text);
         } catch (e) {
