@@ -124,8 +124,8 @@ $calculadora_socio = new CalculadoraPrecios($pesoDolar_socio, $peso_bolivar_soci
 // 3806 PACA DE AZUCAR FINURA 1KG
 
 $respuesta = [];
-$loreamny_productos = "(4584, 4789, 5330, 4362, 4796, 4798, 4660, 4102"; // mayor
-$loreamny_productos .= "1658, 2874, 1628, 2872, 1659, 3803, 4097,  1684, 1627)"; // mayor
+$loreamny_productos = "(4584, 4789, 5330, 4362, 4796, 4798, 4660, 4102,"; // mayor
+$loreamny_productos .= "1658, 1654, 2874, 1628, 2872, 1659, 3803, 4097,  1684, 1627)"; // mayor
 //$loreamny_productos = "(1)";
 if ($mode === 'search_index') {
     // Lightweight query for all products (for Fuse.js)
