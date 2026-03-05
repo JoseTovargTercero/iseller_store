@@ -43,6 +43,8 @@ $sql = "
         u.telefono as cliente_telefono,
         ud.direccion as direccion_entrega,
         ud.referencia,
+        ud.comunidad,
+        ud.delivery_gratis_confirmado,
         ud.nombre_receptor,
         ud.telefono as telefono_receptor,
         ud.lat,
@@ -92,22 +94,32 @@ while ($row = $res->fetch_assoc()) {
         SELECT 
             oa.product_id,
             oa.quantity, 
-            oa.precio_venta_dolar as precio
+            oa.precio_venta_dolar as precio,
+            oa.bolivar,
+            oa.id_sucursal
         FROM orden_articulos oa
         WHERE oa.order_id = ?
     ";
-    $stmtItems = $conexion_store->prepare($sqlItems); // Nota: items estÃ¡n en DB principal $conexion
+    $stmtItems = $conexion_store->prepare($sqlItems);
     $stmtItems->bind_param("i", $ordenId);
     $stmtItems->execute();
     $resItems = $stmtItems->get_result();
     
     $items = [];
+    $total_aliados_bs = 0;
     while ($item = $resItems->fetch_assoc()) {
         $item['subtotal'] = $item['quantity'] * $item['precio'];
         $item['producto_nombre'] = getProductName($item['product_id']);
+        
+        // Sumar si es de un socio (id_sucursal != 9)
+        if ($item['id_sucursal'] != 9) {
+            $total_aliados_bs += ($item['bolivar'] * $item['quantity']);
+        }
+        
         $items[] = $item;
     }
     $row['items'] = $items;
+    $row['total_aliados_bs'] = $total_aliados_bs;
     
     // Normalizar datos
     $row['cliente'] = [
@@ -125,7 +137,10 @@ while ($row = $res->fetch_assoc()) {
         'referencia' => $row['referencia'] ?? '',
         'receptor' => $row['nombre_receptor'] ?? '',
         'lat' => $row['lat'],
-        'lng' => $row['lng']
+        'lng' => $row['lng'],
+        'comunidad' => $row['comunidad'],
+        'delivery_gratis_confirmado' => $row['delivery_gratis_confirmado']
+
     ];
     
     $orders[] = $row;

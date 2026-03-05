@@ -3,6 +3,9 @@ require_once('../core/db.php');
 require_once('../core/session.php');
 require_once('../core/_tasas_cambio.php');
 require_once('../core/_calculadrora_precios.php');
+$mode = $_GET['mode'] ?? 'grid';
+$searchIndex = [];
+
 // Función para optimizar imágenes y generar WebP
 function optimizeImage($srcPath, $destPath, $maxWidth = 400, $quality = 75) {
     if (!file_exists($srcPath)) return false;
@@ -75,11 +78,111 @@ function recompensas($user_id) {
 }
 
 
- if (!isLoggedIn()) {
-        $recompensas = [];
-    }else{
-        $recompensas = recompensas($user_id);
+if (!isLoggedIn()) {
+    $recompensas = [];
+}else{
+    $recompensas = recompensas($user_id);
+}
+
+
+
+function sumarPorcentaje($precio, $porcentaje) {
+    return $precio + ($precio * $porcentaje / 100);
+}
+
+
+/* Productos de socios */
+$sucursal_socio = 8;
+$bss_id_socio = 2;
+
+// $cambio es la clase TasasCambio
+$respuesta_socio = $cambio->obtenerCambio($bss_id_socio);
+$tasas_socio = json_decode($respuesta_socio, true); // true = array asociativo
+
+$tasaMostradas_socio = $cambio->tasasMostradas($bss_id_socio);
+$tasaMostradas_socio = json_decode($tasaMostradas_socio, true);
+$data_monedas_socio = $tasaMostradas_socio['data'];
+
+$pesoDolar_socio = $tasas_socio['data']['pesoDolar'];
+$peso_bolivar_socio = $tasas_socio['data']['peso_bolivar'];
+$bolivar_peso_socio = $tasas_socio['data']['bolivar_peso'];
+$dolarBolivar_socio = $tasas_socio['data']['DolarBolivar'];
+$bsDolar_socio = $dolarBolivar_socio;
+$bcv_socio =  $tasas_socio['data']['bcv'];
+$tipo_tasa_bs_socio = $tasas_socio['data']['tipo_tasa_bs'];
+$redondeo_socio = $tasas_socio['data']['redondeo'];
+$margen_neto_socio = $tasas_socio['data']['margen_neto'];
+// Informacion de la tipo de cambio estandar
+
+
+
+$calculadora_socio = new CalculadoraPrecios($pesoDolar_socio, $peso_bolivar_socio, $dolarBolivar_socio, $bolivar_peso_socio, $bcv_socio, $data_monedas_socio, []);
+
+// 1652 PECHUIGA
+// 4087 MOLLEJAS DE POLLO
+// 3805 HIGADO DE RES
+// 3806 PACA DE AZUCAR FINURA 1KG
+
+$respuesta = [];
+$loreamny_productos = "(4584, 4789, 5330, 4362, 4796, 4798, 4660, 4102"; // mayor
+$loreamny_productos .= "1658, 2874, 1628, 2872, 1659, 3803, 4097,  1684, 1627)"; // mayor
+//$loreamny_productos = "(1)";
+if ($mode === 'search_index') {
+    // Lightweight query for all products (for Fuse.js)
+    $sql = "SELECT p.id, p.nombre, p.codigo_barras, p.precio_compra, p.cantidad_unidades, p.origen, s.stock, s.porcentaje, p.mayor, 
+                   GROUP_CONCAT(c.nombre SEPARATOR ', ') as categorias_nombres
+            FROM productos p
+            INNER JOIN stock s ON p.id = s.id_producto
+            LEFT JOIN categorias_productos cp ON p.id = cp.id_producto
+            LEFT JOIN categorias c ON cp.id_categoria = c.id AND c.activo = 1
+            WHERE p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ? AND s.id_producto IN $loreamny_productos
+            GROUP BY p.id
+            ORDER BY p.nombre ASC";
+    
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param("ii", $sucursal_socio, $bss_id_socio);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $searchIndex = [];
+    while ($row = $result->fetch_assoc()) {
+        $precios = $calculadora_socio->calcularPrecios($row);
+        
+        $nombre = mb_strtolower(trim($row['nombre']), 'UTF-8');
+        $nombre = ucfirst($nombre);
+
+        $precio_venta_dolar = sumarPorcentaje($precios['precio_venta_dolar'], 1);
+        $precio_venta_peso = sumarPorcentaje($precios['precio_venta_peso'], 1);
+        $precio_venta_bs = sumarPorcentaje($precios['precio_venta_bs'], 1);
+
+        $searchIndex[] = [
+            'id' => $row['id'],
+            'n' => $nombre, // Short key for 'nombre' to save bandwidth
+            'c' => trim($row['codigo_barras']), // 'codigo'
+            's' => (int)$row['stock'], // 'stock'
+            'm' => $row['mayor'], // 'mayor'
+            'ca' => $row['categorias_nombres'] ?? '', // 'categorias'
+
+            /* PRECIO DE VENTA */
+            'pd' => $precio_venta_dolar,
+            'pp' => $precio_venta_peso,
+            'pb' => $precio_venta_bs,
+            /* PRECIO DE VENTA */
+            //'cd' => $precios['precio_venta_dolar'],
+            'sucursal' => 'loreamny',
+            //  'cp' => $precios['precio_venta_peso'],
+
+            /* lOS PRECIOS DE COMPRA SON LOS PRECIOS DE VENTA DEL SOCIO */
+            'pc' => $precios['precio_venta_dolar'],
+            'pc_bs' => $precios['precio_venta_bs'],
+            /* lOS PRECIOS DE COMPRA SON LOS PRECIOS DE VENTA DEL SOCIO */
+
+            'bss_id' => $bss_id_socio,
+            'id_sucursal' => $sucursal_socio
+        ];
     }
+}
+/* Productos de socios */
 
 
 
@@ -88,7 +191,6 @@ $calculadora = new CalculadoraPrecios($pesoDolar, $peso_bolivar, $dolarBolivar, 
 $sucursal = $_SESSION['sucursal'] ?? 9;
 $bss_id = $_SESSION['bss_id'] ?? 3;
 
-$mode = $_GET['mode'] ?? 'grid';
 
 if ($mode === 'search_index') {
     // Lightweight query for all products (for Fuse.js)
@@ -107,7 +209,6 @@ if ($mode === 'search_index') {
     $stmt->execute();
     $result = $stmt->get_result();
 
-    $searchIndex = [];
     while ($row = $result->fetch_assoc()) {
         $precios = $calculadora->calcularPrecios($row);
         
@@ -126,7 +227,11 @@ if ($mode === 'search_index') {
             'pb' => $precios['precio_venta_bs'],
             'cd' => $precios['dolar_con_recompensa'],
             'cp' => $precios['bs_con_recompensa'],
-            'pc' => $precios['precio_dolar_compra']
+            'pc' => $precios['precio_dolar_compra'],
+            'pc_bs' => $precios['precio_bs_compra'],
+            'sucursal' => 'iseller',
+            'bss_id' => $bss_id,
+            'id_sucursal' => $sucursal
         ];
     }
     echo json_encode(['recompensas' => $recompensas, 'searchIndex' => $searchIndex]);
@@ -203,7 +308,6 @@ while ($row = $result->fetch_assoc()) {
         $img = "";
     }
 
-
     $products[] = [
         'id' => $row['id'],
         'nombre' => $nombre,
@@ -214,13 +318,79 @@ while ($row = $result->fetch_assoc()) {
         'precio_dolar_visible' => $precios['precio_venta_dolar'],
         'precio_peso_visible' => $precios['precio_venta_peso'],
         'precio_bs_visible' => $precios['precio_venta_bs'],
-        'costo_dolar' => $precios['dolar_con_recompensa'],
-        'costo_bs' => $precios['bs_con_recompensa'],
         'precio_costo' => $precios['precio_dolar_compra'],
+        'precio_costo_bs' => $precios['precio_bs_compra'],
+        'sucursal' => 'iseller',
         'cantidadPaca' => $row['cantidad_unidades'],
-        'img' => $img
+        'img' => $img,
+        'bss_id' => $bss_id,
+        'id_sucursal' => $sucursal
     ];
 }
+
+/* Agregar productos del socio al Grid */
+$sql_socio_grid = "SELECT p.*, s.stock, s.porcentaje, s.id_sucursal,
+                          GROUP_CONCAT(c.nombre SEPARATOR ', ') as categorias_nombres
+                   FROM productos p
+                   INNER JOIN stock s ON p.id = s.id_producto
+                   LEFT JOIN categorias_productos cp ON p.id = cp.id_producto
+                   LEFT JOIN categorias c ON cp.id_categoria = c.id AND c.activo = 1
+                   WHERE p.activo = 0 AND s.id_sucursal = ? AND s.bss_id = ?
+                     AND s.id_producto IN $loreamny_productos
+                   GROUP BY p.id
+                   ORDER BY p.nombre ASC";
+
+$stmt_socio_grid = $conexion->prepare($sql_socio_grid);
+$stmt_socio_grid->bind_param("ii", $sucursal_socio, $bss_id_socio);
+$stmt_socio_grid->execute();
+$result_socio_grid = $stmt_socio_grid->get_result();
+
+while ($row = $result_socio_grid->fetch_assoc()) {
+    $precios = $calculadora_socio->calcularPrecios($row);
+
+    $nombre = mb_strtolower(trim($row['nombre']), 'UTF-8');
+    $nombre = ucfirst($nombre);
+
+    $precio_venta_dolar = sumarPorcentaje($precios['precio_venta_dolar'], 1);
+    $precio_venta_peso  = sumarPorcentaje($precios['precio_venta_peso'], 1);
+    $precio_venta_bs    = sumarPorcentaje($precios['precio_venta_bs'], 1);
+
+    $imgPath = "../assets/img/stock/{$row['id']}.png";
+    $optimizedPath = "../assets/img/stock/optimized/{$row['id']}.webp";
+    if (!file_exists($optimizedPath) && file_exists($imgPath)) {
+        optimizeImage($imgPath, $optimizedPath, 400, 75);
+    }
+
+    $img = '';
+    if (file_exists($optimizedPath)) {
+        $img = "assets/img/stock/optimized/{$row['id']}.webp";
+    } elseif (file_exists($imgPath)) {
+        $img = "";
+    }
+
+    $products[] = [
+        'id' => $row['id'],
+        'nombre' => $nombre,
+        'stock' => (int)$row['stock'],
+        'mayor' => $row['mayor'],
+        'codigo' => trim($row['codigo_barras']),
+        'categorias' => $row['categorias_nombres'] ?? '',
+        'precio_dolar_visible' => $precio_venta_dolar,
+        'precio_peso_visible'  => $precio_venta_peso,
+        'precio_bs_visible'    => $precio_venta_bs,
+        /* lOS PRECIOS DE COMPRA SON LOS PRECIOS DE VENTA DEL SOCIO */
+        'precio_costo' => $precios['precio_venta_dolar'],
+        'precio_costo_bs'    => $precios['precio_venta_bs'],
+        /* lOS PRECIOS DE COMPRA SON LOS PRECIOS DE VENTA DEL SOCIO */
+        'sucursal' => 'loreamny',
+        'cantidadPaca' => $row['cantidad_unidades'],
+        'img' => $img,
+        'bss_id' => $bss_id_socio,
+        'id_sucursal' => $sucursal_socio
+    ];
+}
+$total_socio_grid = $result_socio_grid->num_rows;
+/* Fin productos del socio */
 
 $countSql = "SELECT COUNT(*) total
              FROM productos p
@@ -236,7 +406,7 @@ if (!empty($countParams)) {
     $countStmt->bind_param($countTypes, ...$countParams);
 }
 $countStmt->execute();
-$total = $countStmt->get_result()->fetch_assoc()['total'];
+$total = $countStmt->get_result()->fetch_assoc()['total'] + $total_socio_grid;
 
 
 echo json_encode([

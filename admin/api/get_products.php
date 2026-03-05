@@ -12,6 +12,11 @@ $calculadora = new CalculadoraPrecios($pesoDolar, $peso_bolivar, $dolarBolivar, 
 $sucursal = 9; // Default sucursal per logic
 $bss_id = 3;   // Default bss_id per logic
 
+$sucursal_socio = 13;
+$bss_id_socio = 2;
+
+$loreamny_productos = "(4584, 4789, 5330, 4087, 4362, 4796, 4798, 4660, 4102, 1658, 2874, 1628, 2872, 1659, 3803, 3805, 1652, 4097, 1651, 3806, 1684, 1627)";
+
 $search = $_GET['search'] ?? '';
 
 $sql = "SELECT p.*, s.stock, GROUP_CONCAT(c.nombre SEPARATOR ', ') as categorias_nombres
@@ -20,10 +25,11 @@ $sql = "SELECT p.*, s.stock, GROUP_CONCAT(c.nombre SEPARATOR ', ') as categorias
         LEFT JOIN categorias_productos cp ON p.id = cp.id_producto
         LEFT JOIN categorias c ON cp.id_categoria = c.id AND c.activo = 1
         WHERE p.activo = 0 
-          AND s.id_sucursal = ? 
-          AND s.bss_id = ? 
-          AND p.origen != 'c' 
-          AND s.stock > 0";
+          AND (
+            (s.id_sucursal = ? AND s.bss_id = ? AND s.stock > 0 AND p.origen != 'c') 
+            OR 
+            (p.id IN $loreamny_productos)
+          )";
 
 $types = "ii";
 $params = [$sucursal, $bss_id];

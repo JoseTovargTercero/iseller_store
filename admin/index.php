@@ -226,7 +226,9 @@ requireAdminLogin();
                                 <div id="detailDeliveryContent" class="d-none">
                                     <p class="mb-1 small"><strong>Recibe:</strong> <span id="detailReceptor"></span></p>
                                     <p class="mb-1 small"><strong>Teléfono:</strong> <span id="detailReceptorPhone"></span></p>
+                                    <p class="mb-1 small"><strong>Comunidad:</strong> <br><span id="detailComunidad" class="text-break"></span></p>
                                     <p class="mb-1 small"><strong>Dirección:</strong> <br><span id="detailAddress" class="text-break"></span></p>
+                                    <p class="mb-1 small"><strong>TIPO:</strong> <br><span id="detailDeliveryGratisConfirmado" class="text-break"></span></p>
                                     <p class="mb-0 small fst-italic text-muted"><i class="bi bi-info-circle me-1"></i>Ref: <span id="detailRef"></span></p>
                                     
                                     <!-- Map Container -->

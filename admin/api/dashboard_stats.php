@@ -47,12 +47,27 @@ function getPeriodStats($conexion_store, $days = null) {
 
     if ($res) {
         while ($row = $res->fetch_assoc()) {
-            $period['orders'][$row['estado']] = (int)$row['count'];
+            $estado_str = $row['estado'];
+            $period['orders'][$estado_str] = (int)$row['count'];
             $period['orders']['total'] += (int)$row['count'];
-            if ($row['estado'] !== 'rechazada') {
+            if ($estado_str !== 'rechazada') {
                 $period['revenue'] += (float)$row['total_revenue'];
             }
         }
+    }
+
+    // 1.1 Ingresos para Aliados (id_sucursal != 9)
+    $sqlAliados = "
+        SELECT SUM(oa.bolivar * oa.quantity) as aliados_total
+        FROM orden_articulos oa
+        JOIN compras_por_usuarios cpu ON oa.order_id = cpu.compra_id
+        $where AND cpu.estado != 'rechazada' AND oa.id_sucursal != 9
+    ";
+    $resAliados = $conexion_store->query($sqlAliados);
+    if ($resAliados && $rowA = $resAliados->fetch_assoc()) {
+        $period['aliados_revenue'] = (float)$rowA['aliados_total'];
+    } else {
+        $period['aliados_revenue'] = 0;
     }
 
     // 2. Visitas y Visitas Únicas (por session_id o ip_address+user_agent)

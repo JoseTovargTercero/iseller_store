@@ -64,6 +64,7 @@ class CalculadoraPrecios
             $precioBsCompra = $precioDolarCompra * $this->dolarBolivar;
         }
 
+
         // Bolívares → pesos
         $precioBolivarPeso = $this->formatPeso(($precioBsVenta * $this->bolivar_peso) * 1000);
 
@@ -98,18 +99,18 @@ class CalculadoraPrecios
             }
         }
 
-
-
-
-        
         return [
             'recompensa' => $recompensas,
             'precio_venta_dolar' => (float) $precioDolar,
             'precio_venta_bs' => (float) $precioBsVenta,
             'precio_venta_peso' => (float) $valorPesos,
+            // El precio de venta normal
             'dolar_con_recompensa' => (float) $precioDolarRecompensa,
             'bs_con_recompensa' => (float) $precioBsRecompensa,
-            'precio_dolar_compra' => (float) $precioDolarCompra
+            // El precio de venta con recompensa
+            'precio_dolar_compra' => (float) $precioDolarCompra,
+            'precio_bs_compra' => (float) $precioBsCompra
+            // El precio de compra
         ];
     }
 

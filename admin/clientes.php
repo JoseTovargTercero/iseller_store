@@ -48,23 +48,7 @@ requireAdminLogin();
             </div>
         </div>
 
-        <!-- Registration Chart Section -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0">Nuevos Registros (Últimos 15 días)</h5>
-                        <button class="btn btn-light btn-sm rounded-circle" onclick="loadRegistrationStats()" title="Recargar gráfico">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="registrationChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        
         <!-- Estadísticas Rápidas -->
         <div class="row g-4 mb-4">
             <div class="col-md-4">
@@ -103,6 +87,24 @@ requireAdminLogin();
                             <h6 class="text-muted mb-1">Este Mes</h6>
                             <h3 class="fw-bold mb-0" id="statsMonth">0</h3>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Registration Chart Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">Nuevos Registros (Últimos 15 días)</h5>
+                        <button class="btn btn-light btn-sm rounded-circle" onclick="loadRegistrationStats()" title="Recargar gráfico">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="registrationChart"></canvas>
                     </div>
                 </div>
             </div>

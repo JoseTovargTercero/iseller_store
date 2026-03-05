@@ -37,7 +37,7 @@ try {
 
     // 2. Direcciones del Usuario
     $stmtAddress = $conexion_store->prepare("
-        SELECT id, direccion, referencia, lat, lng, es_principal
+        SELECT id, direccion, referencia, lat, lng, es_principal, nombre_receptor, telefono, comunidad, delivery_gratis_confirmado
         FROM usuarios_direcciones 
         WHERE usuario_id = ?
         ORDER BY es_principal DESC, id DESC

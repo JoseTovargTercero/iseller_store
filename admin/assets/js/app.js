@@ -109,7 +109,7 @@ function renderStats(allStats, period) {
 
     container.innerHTML = `
         <!-- Main Metrics -->
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
             <div class="card border-0 shadow-sm h-100 overflow-hidden" style="border-left: 5px solid #007bff !important;">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start">
@@ -125,7 +125,7 @@ function renderStats(allStats, period) {
             </div>
         </div>
 
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
             <div class="card border-0 shadow-sm h-100 overflow-hidden" style="border-left: 5px solid #28a745 !important;">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start">
@@ -141,7 +141,23 @@ function renderStats(allStats, period) {
             </div>
         </div>
 
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
+            <div class="card border-0 shadow-sm h-100 overflow-hidden" style="border-left: 5px solid #fd7e14 !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Pago a Aliados</p>
+                            <h2 class="fw-bold mb-0 text-dark">${(stats.aliados_revenue || 0).toFixed(2)} <span class="fs-6 fw-normal">Bs</span></h2>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-people text-warning fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-3">
             <div class="card border-0 shadow-sm h-100 overflow-hidden" style="border-left: 5px solid #17a2b8 !important;">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start">
@@ -262,10 +278,19 @@ function renderOrders(orders) {
 
         let totalBs = parseFloat(order.valor_compra_bs)
         let bsEnvio = 0;
+        let shippingDisplay = '<span class="text-muted">-</span>';
         
         if (order.entrega.tipo === 'delivery') {
             bsEnvio = parseFloat(order.importe_envio_bs);
-            totalBs += bsEnvio;
+            // Si el importe de envío es 0, es gratis
+
+            let totalDl = parseFloat(order.total);
+            if (order.entrega.delivery_gratis_confirmado != 0 && totalDl >= 3) {
+                shippingDisplay = '<span class="badge bg-success">GRATIS</span>';
+            } else {
+                shippingDisplay = `<div>${bsEnvio.toFixed(2)} Bs</div>`;
+                totalBs += bsEnvio;
+            }
         }
 
 
@@ -299,7 +324,7 @@ function renderOrders(orders) {
                 ${deliveryType}
             </td>
             <td>
-                <div >${bsEnvio} Bs</div>
+                ${shippingDisplay}
             </td>
             <td>
                 <div >${parseFloat(order.valor_compra_bs).toFixed(2)} Bs</div>
@@ -497,7 +522,8 @@ window.viewDetails = (id) => {
         document.getElementById('detailReceptorPhone').textContent = order.entrega.receptor ? (order.entrega.telefono || order.cliente.telefono) : order.cliente.telefono;
         document.getElementById('detailAddress').textContent = order.entrega.direccion;
         document.getElementById('detailRef').textContent = order.entrega.referencia || 'Sin referencia';
-        
+        document.getElementById('detailComunidad').innerHTML = order.entrega.comunidad || 'Sin comunidad';
+        document.getElementById('detailDeliveryGratisConfirmado').innerHTML = order.entrega.delivery_gratis_confirmado ? '<span class="badge bg-success">DELIVERY GRATIS</span>' : '<span class="badge bg-danger">DELIVERY PAGADO</span>';
         // Map Logic
         const mapContainer = document.getElementById('deliveryMap');
         if (order.entrega.lat && order.entrega.lng) {
@@ -554,9 +580,10 @@ window.viewDetails = (id) => {
 
     let totalBs = parseFloat(order.valor_compra_bs); // Correct Sum
     let deliveryBs = parseFloat(order.importe_envio_bs);
+    let totalDl = parseFloat(order.total);
 
 
-    if (order.entrega.tipo === 'delivery'){
+    if (order.entrega.tipo === 'delivery' && order.entrega.delivery_gratis_confirmado === 0 || order.entrega.tipo === 'delivery' && totalDl <= 2.99){
         totalBs += deliveryBs;
     }else{
         deliveryBs = 0;
@@ -564,18 +591,18 @@ window.viewDetails = (id) => {
     
     
     let deliveryRow = '';
-    if (order.entrega.tipo === 'delivery') {
+    if (order.entrega.tipo === 'delivery' && order.entrega.delivery_gratis_confirmado === 0 || order.entrega.tipo === 'delivery' && totalDl <= 2.99) {
+        const shippingLabel = `${deliveryBs.toFixed(2)} Bs`;
         deliveryRow = `
             <div class="d-flex justify-content-between text-muted small mb-1">
                 <span>Envío:</span>
-                <span>${deliveryBs.toFixed(2)} Bs</span>
+                <span>${shippingLabel}</span>
             </div>
             <div class="d-flex justify-content-between text-muted small mb-2">
                 <span>Compra:</span>
                 <span>${parseFloat(order.valor_compra_bs).toFixed(2)} Bs</span>
             </div>
-            <hr class="my-1">
-        `;
+            <hr class="my-1">`;
     }
 
     document.getElementById('detailTotal').innerHTML = `
@@ -585,6 +612,13 @@ window.viewDetails = (id) => {
                 <span>Total:</span>
                 <span class="fs-5 text-success ms-2">${totalBs.toFixed(2)} Bs</span>
             </div>
+            ${order.total_aliados_bs > 0 ? `
+            <div class="mt-2 pt-2 border-top">
+                <div class="d-flex justify-content-between align-items-center text-warning fw-bold small">
+                    <span>Pago Aliados:</span>
+                    <span>${order.total_aliados_bs.toFixed(2)} Bs</span>
+                </div>
+            </div>` : ''}
             <div class="text-end text-muted small mt-1">Ref: $${parseFloat(order.total).toFixed(2)}</div>
         </div>
     `;

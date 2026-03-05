@@ -88,13 +88,13 @@ function procesarCarritos()
             $idProd = (int)$prodFrontend['id'];
             
             // Consultar datos reales
-            $sqlProd = "SELECT p.*, s.stock, s.porcentaje 
+            $sqlProd = "SELECT p.*, s.stock, s.porcentaje, s.bss_id, s.id_sucursal 
                         FROM productos p 
                         INNER JOIN stock s ON p.id = s.id_producto 
-                        WHERE p.id = ? AND s.id_sucursal = ? AND s.bss_id = ? LIMIT 1";
+                        WHERE p.id = ? LIMIT 1";
             
             $stmtP = $conexion->prepare($sqlProd);
-            $stmtP->bind_param("iii", $idProd, $id_sucursal, $bss_id);
+            $stmtP->bind_param("i", $idProd);
             $stmtP->execute();
             $resP = $stmtP->get_result();
             
@@ -130,6 +130,9 @@ function procesarCarritos()
              $valorFinalVenta += $prodFrontend['price'] * $qty;
              $valorFinalBs += $prodFrontend['priceBolivar'] * $qty;
              $valorFinalCop += $prodFrontend['pricePeso'] * $qty;
+
+             $prodFrontend['bss_id'] = $prodDB['bss_id'];
+             $prodFrontend['id_sucursal'] = $prodDB['id_sucursal'];
 
              agregarAlCarrito($cart, $prodFrontend);
         }
@@ -182,7 +185,9 @@ function agregarAlCarrito($cart, $producto)
         'priceBolivar' => floatval($producto['priceBolivar']),
         'qty' => $producto['qty'],
         'mayor' => $mayor,
-        'cantidadPaca' => $producto['cantidadPaca']
+        'cantidadPaca' => $producto['cantidadPaca'],
+        'bss_id' => $producto['bss_id'],
+        'id_sucursal' => $producto['id_sucursal']
     ];
 
     $cart->insert($itemData);
@@ -346,8 +351,8 @@ function guardarArticulosOrden($conexion_store, $cart, $orderID)
             $item['price'],
             $item['priceBolivar'],
             $item['pricePeso'],
-            $id_sucursal,
-            $bss_id
+            $item['id_sucursal'],
+            $item['bss_id']
         );
         $insertStmt->execute();
 
@@ -355,14 +360,14 @@ function guardarArticulosOrden($conexion_store, $cart, $orderID)
 
         if ($item['mayor'] == '1') {
 
-            $stmtStock->bind_param("iii", $item['id'], $id_sucursal, $bss_id);
+            $stmtStock->bind_param("iii", $item['id'], $item['id_sucursal'], $item['bss_id']);
             $stmtStock->execute();
             $result = $stmtStock->get_result()->fetch_assoc();
             $id_stock = $result['id_stock'];
 
 
 
-            $stmtStockParaMayor->bind_param("iii", $id_stock, $id_sucursal, $bss_id);
+            $stmtStockParaMayor->bind_param("iii", $id_stock, $item['id_sucursal'], $item['bss_id']);
             $stmtStockParaMayor->execute();
             $result = $stmtStockParaMayor->get_result()->fetch_assoc();
             $stock = max(0, $result['stock'] - ($item['qty'] * $item['cantidadPaca']));
@@ -371,18 +376,18 @@ function guardarArticulosOrden($conexion_store, $cart, $orderID)
 
 
 
-            $updateStmtMayor->bind_param("iiii", $stock, $id_stock, $id_sucursal, $bss_id);
+            $updateStmtMayor->bind_param("iiii", $stock, $id_stock, $item['id_sucursal'], $item['bss_id']);
             $updateStmtMayor->execute();
         } else {
 
             // Actualizar stock
-            $stmtStock->bind_param("iii", $item['id'], $id_sucursal, $bss_id);
+            $stmtStock->bind_param("iii", $item['id'], $item['id_sucursal'], $item['bss_id']);
             $stmtStock->execute();
             $result = $stmtStock->get_result()->fetch_assoc();
             $stock = max(0, $result['stock'] - $item['qty']);
 
 
-            $updateStmt->bind_param("iiii", $stock, $item['id'], $id_sucursal, $bss_id);
+            $updateStmt->bind_param("iiii", $stock, $item['id'], $item['id_sucursal'], $item['bss_id']);
             $updateStmt->execute();
         }
     }

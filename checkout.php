@@ -135,38 +135,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // 2. Guardar nueva dirección
-    if ($action === 'save_address') {
-        $nombre = trim($input['nombre_receptor'] ?? '');
-        $telefono = trim($input['telefono'] ?? '');
-        $direccion = trim($input['direccion'] ?? '');
-        $referencia = trim($input['referencia'] ?? '');
-        $lat = $input['lat'] ?? null;
-        $lng = $input['lng'] ?? null;
+        // 2. Guardar nueva dirección
+        if ($action === 'save_address') {
+            $nombre = trim($input['nombre_receptor'] ?? '');
+            $telefono = trim($input['telefono'] ?? '');
+            $direccion = trim($input['direccion'] ?? '');
+            $referencia = trim($input['referencia'] ?? '');
+            $lat = $input['lat'] ?? null;
+            $lng = $input['lng'] ?? null;
+            $comunidad = $input['comunidad'] ?? null;
 
-        if (empty($nombre) || empty($telefono) || empty($direccion)) {
-            echo json_encode(['success' => false, 'message' => 'Complete los campos obligatorios']);
+            if (empty($nombre) || empty($telefono) || empty($direccion)) {
+                echo json_encode(['success' => false, 'message' => 'Complete los campos obligatorios']);
+                exit;
+            }
+
+            // Resetear principal si esta es la primera o se marcó como principal
+            $stmt = $conexion_store->prepare("UPDATE usuarios_direcciones SET es_principal = 0 WHERE usuario_id = ?");
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+
+            $freeDeliveryComs = ["JOSE ANTONIO PAEZ", "LA FLORIDA", "CHAPARRALITO", "EL POLIGONO", "URB EL CAICET", "URB AV DEL EJERCITO", "SIMON BOLIVAR", "CARINAGUITA", "JOSE MARIA VARGAS"];
+
+            $delivery_gratis_confirmado = 0;
+
+            if (in_array(strtoupper($comunidad), $freeDeliveryComs)) {
+                $delivery_gratis_confirmado = 1;
+            }
+
+
+
+            $sql = "INSERT INTO usuarios_direcciones (usuario_id, nombre_receptor, telefono, direccion, referencia, lat, lng, comunidad, delivery_gratis_confirmado, es_principal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+            $stmt = $conexion_store->prepare($sql);
+            $stmt->bind_param("issssddsi", $user_id, $nombre, $telefono, $direccion, $referencia, $lat, $lng, $comunidad, $delivery_gratis_confirmado);
+            
+            if ($stmt->execute()) {
+                echo json_encode(['success' => true, 'id' => $stmt->insert_id, 'message' => 'Dirección guardada']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Error al guardar: ' . $conexion_store->error]);
+            }
             exit;
         }
-
-        // Resetear principal si esta es la primera o se marcó como principal
-        // (Simplificación: siempre la última es principal por defecto en este ejemplo o manejamos la lógica)
-        // Vamos a hacer la nueva dirección principal automáticamente para facilitar el flujo
-        $stmt = $conexion_store->prepare("UPDATE usuarios_direcciones SET es_principal = 0 WHERE usuario_id = ?");
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-
-        $sql = "INSERT INTO usuarios_direcciones (usuario_id, nombre_receptor, telefono, direccion, referencia, lat, lng, es_principal) VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
-        $stmt = $conexion_store->prepare($sql);
-        $stmt->bind_param("issssdd", $user_id, $nombre, $telefono, $direccion, $referencia, $lat, $lng);
-        
-        if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'id' => $stmt->insert_id, 'message' => 'Dirección guardada']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Error al guardar: ' . $conexion_store->error]);
-        }
-        exit;
-    }
 
     // 3. Procesar Compra
     if (isset($input['carrito'])) {
@@ -218,8 +227,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 echo json_encode(['success' => false, 'message' => 'Para delivery debe seleccionar una dirección']);
                 exit;
             }
+
+            // Verificar si la dirección seleccionada tiene delivery gratis
+            $stmtAddr = $conexion_store->prepare("SELECT delivery_gratis_confirmado FROM usuarios_direcciones WHERE id = ? AND usuario_id = ?");
+            $stmtAddr->bind_param("ii", $address_id, $user_id);
+            $stmtAddr->execute();
+            $resAddr = $stmtAddr->get_result();
+            $addrData = $resAddr->fetch_assoc();
+            $stmtAddr->close();
+
             // Regla costo de envío
-            if ($total_dolares > 35.00) {
+            $isFreeZone = ($addrData && $addrData['delivery_gratis_confirmado'] == 1);
+            if ($total_dolares > 35.00 || ($isFreeZone && $total_dolares >= 3.00)) {
                 $importe_envio = 0.00;
             } else {
                 $importe_envio = $costo_envio_dolares;
@@ -311,9 +330,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ano = date('Y');
             $semana = date('Y-W');
             $dia = date('N');
-            $id_sucursal = 1; // Default Online Store
-            // $bss_id viene de db.php
-            
             $status = 1; // 1 = Pendiente/Venta Normal
             $tipoVenta = 1; // 1 = Contado
             $pagoTipo = 2; // Default a Transferencia/Otro (Ajustar según sistema)
@@ -372,12 +388,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
 
             // Stock queries
-            $stmtStock = $conexion->prepare("SELECT stock, id_stock FROM stock WHERE id_producto = ? AND id_sucursal = ? AND bss_id = ? LIMIT 1");
+            $stmtStock = $conexion->prepare("SELECT stock, id_stock, id_sucursal, bss_id FROM stock WHERE id_producto = ? AND id_sucursal = ? AND bss_id = ? LIMIT 1");
             $stmtUpdStock = $conexion->prepare("UPDATE stock SET stock = ? WHERE id_producto = ? AND id_sucursal = ? AND bss_id = ?");
 
             foreach ($carrito as $item) {
                 // Insertar Item
                 $qty = $item['qty'];
+                $stock_id_sucursal = $item['id_sucursal'];
+                $stock_bss_id = $item['bss_id'];
+
+
+                $price_base = floatval($item['price_C']);
+                $priceBs_base = floatval($item['price_C_Bs']);
+                $priceCop_base = 0;
+
+
                 $price = floatval($item['price']);
                 $priceBs = floatval($item['priceBolivar']);
                 $priceCop = floatval($item['pricePeso']);
@@ -403,20 +428,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtItem->bind_param(
                     "iiddddddddi",
                     $orden_id, $item['id'], $qty, 
-                    $price, $priceBs, $priceCop, // precios base?
+                    $price_base, $priceBs_base, $priceCop_base, // precios base?
                     $price, $priceBs, $priceCop, // precios venta
-                    $id_sucursal, $bss_id
+                    $stock_id_sucursal, $stock_bss_id
                 );
                 $stmtItem->execute();
 
                 // Actualizar Stock
-                $stmtStock->bind_param("iii", $item['id'], $id_sucursal, $bss_id);
+                $stmtStock->bind_param("iii", $item['id'], $stock_id_sucursal, $stock_bss_id);
                 $stmtStock->execute();
                 $resStock = $stmtStock->get_result();
                 if ($resStock->num_rows > 0) {
                     $rowStock = $resStock->fetch_assoc();
                     $newStock = max(0, $rowStock['stock'] - $qty);
-                    $stmtUpdStock->bind_param("iiii", $newStock, $item['id'], $id_sucursal, $bss_id);
+                    $stmtUpdStock->bind_param("iiii", $newStock, $item['id'], $stock_id_sucursal, $stock_bss_id);
                     $stmtUpdStock->execute();
                 }
             }
@@ -1071,6 +1096,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                                 <input type="hidden" id="addr-lat">
                                 <input type="hidden" id="addr-lng">
+                                <input type="hidden" id="addr-delivery-gratis" value="0">
                             </div>
                         </div>
                     </form>
@@ -1156,6 +1182,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             input.value = name;
             resultsDiv.style.display = 'none';
+
+            // Actualizar estado de delivery gratis
+            const isFree = freeDeliveryComs.includes(name.toUpperCase());
+            document.getElementById('addr-delivery-gratis').value = isFree ? 1 : 0;
 
             // Buscar en la capa comunidadesLayer para mover el mapa y resaltar
             if (comunidadesLayer) {
@@ -1312,7 +1342,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             let shippingCost = 0;
             let shippingCostBs = 0;
             if(deliveryType === 'delivery') {
-                if(subtotalUsd > 35) {
+                const isFreeAddress = selectedAddressData && selectedAddressData.delivery_gratis_confirmado == 1;
+                
+                if (isFreeAddress && subtotalUsd < 3) {
+                    Notiflix.Notify.warning('El envío gratuito por zona aplica para compras mayores a $3. Se ha sumado el costo de envío.');
+                    shippingCost = parseFloat(<?php echo $costo_envio_dolares; ?>);
+                    shippingCostBs = parseFloat(<?php echo $costo_envio_bs; ?>);
+                } else if(subtotalUsd > 35 || isFreeAddress) {
                     shippingCost = 0; // Gratis
                     shippingCostBs = 0;
                 } else {
@@ -1331,26 +1367,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             let discountUsd = 0;
             let discountBs = 0;
             let discountType = null;
-            
+
+
+
             try {
                 const resRewards = await fetch('api/recompensas_check.php');
                 const dataRewards = await resRewards.json();
 
                     const descuento_porcentaje = puntosUsuario == '0.00' ? 0.50 : 0.90;
+                    console.log(descuento_porcentaje)
 
 
                 if(dataRewards.success && dataRewards.has_rewards && dataRewards.rewards.length > 0) {
                     const reward = dataRewards.rewards[0]; // Primera recompensa disponible
                     discountType = reward.tipo;
 
-              
                     if(reward.tipo === 'monetaria') {
                         // Descuento monetario directo
                         discountUsd = Math.min(parseFloat(reward.monto), totalUsd);
                         // Calcular equivalente en Bs (aproximado usando ratio)
                         const bsRatio = totalBs / subtotalUsd;
                         discountBs = discountUsd * bsRatio;
-                        
                     } else if(reward.tipo === 'descuento_ganancia') {
                         // Calcular ganancia total (aproximado: 90% de la ganancia)
                         // Nota: El cálculo exacto se hace en el backend
@@ -1424,8 +1461,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         const isSelected = selectedAddressId == addr.id;
                         const card = document.createElement('div');
                         card.className = 'col-md-6';
+                        
+                        const freeBadge = addr.delivery_gratis_confirmado == 1 
+                            ? '<span class="badge bg-success position-absolute bottom-0 end-0 m-2" style="font-size: 0.65rem;"><i class="bi bi-truck"></i> ENVÍO GRATIS</span>' 
+                            : '';
+
                         card.innerHTML = `
-                            <div class="address-card ${isSelected ? 'selected' : ''}" onclick="seleccionarDireccion(this, ${addr.id})" data-json='${JSON.stringify(addr)}'>
+                            <div class="address-card ${isSelected ? 'selected' : ''} position-relative" onclick="seleccionarDireccion(this, ${addr.id})" data-json='${JSON.stringify(addr)}'>
+                                ${freeBadge}
                                 <h6 class="fw-bold mb-1">${addr.nombre_receptor}</h6>
                                 <p class="mb-1 small">${addr.direccion}</p>
                                 <p class="mb-0 small text-muted"><i class="bi bi-telephone"></i> ${addr.telefono}</p>
@@ -1468,7 +1511,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // --- CONFIGURACIÓN DE GEOCERCA ---
         const GEOFENCE_CENTER = [5.653802, -67.605304];
-        const GEOFENCE_RADIUS = 6500; // 5 kilómetros en metros
+        const GEOFENCE_RADIUS = 6500; // 6.5 kilómetros en metros
+        const freeDeliveryComs = ["JOSE ANTONIO PAEZ", "LA FLORIDA", "CHAPARRALITO", "EL POLIGONO", "URB EL CAICET", "URB AV DEL EJERCITO", "SIMON BOLIVAR", "CARINAGUITA", "JOSE MARIA VARGAS"];
         let geofenceCircle = null;
 
         function initMap() {
@@ -1599,6 +1643,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             marker.setLatLng([lat, lng]);
             updateUiCoords(lat, lng);
+
+            // Verificar si cae en una comunidad con delivery gratis
+            if (comunidadesLayer) {
+                const results = leafletPip.pointInLayer([lat, lng], comunidadesLayer);
+                if (results.length > 0) {
+                    const comName = results[0].feature.properties.NAME.toUpperCase();
+                    const isFree = freeDeliveryComs.includes(comName);
+                    document.getElementById('addr-delivery-gratis').value = isFree ? 1 : 0;
+                    document.getElementById('addr-community').value = results[0].feature.properties.NAME;
+                } else {
+                    document.getElementById('addr-delivery-gratis').value = 0;
+                }
+            }
         }
         
         function updateUiCoords(lat, lng) {
@@ -1639,6 +1696,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     referencia: ref,
                     lat: lat,
                     lng: lng,
+                    comunidad: document.getElementById('addr-community').value,
+                    delivery_gratis_confirmado: document.getElementById('addr-delivery-gratis').value,
                     csrf_token: document.querySelector('meta[name="csrf-token"]').content
                 })
             })

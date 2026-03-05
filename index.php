@@ -37,7 +37,7 @@ $loyaltyData = [
 if (isLoggedIn()) {
     $uid = getUserId();
     // Usamos conexion_store que es donde está la tabla usuarios según checkout.php
-    $stmtLoyalty = $conexion_store->prepare("SELECT puntos, nivel, foto FROM usuarios WHERE id = ?");
+    $stmtLoyalty = $conexion_store->prepare("SELECT puntos, nivel, foto, nombre, telefono FROM usuarios WHERE id = ?");
     $stmtLoyalty->bind_param("i", $uid);
     $stmtLoyalty->execute();
     $resLoyalty = $stmtLoyalty->get_result();
@@ -57,7 +57,9 @@ if (isLoggedIn()) {
             'progreso' => $progreso,
             'porcentaje' => $porcentaje,
             'falta' => $falta,
-            'foto' => $rowLoyalty['foto']
+            'foto' => $rowLoyalty['foto'],
+            'nombre' => $rowLoyalty['nombre'],
+            'telefono' => $rowLoyalty['telefono']
         ];
     }
     $stmtLoyalty->close();
@@ -505,6 +507,24 @@ registrarVisita($conexion_store);
  .text-xs{
     font-size: 60% !important;
  }
+
+ .badge-aliado {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    margin-bottom: 0.5rem;
+ }
+ .badge-aliado i {
+    font-size: 0.8rem;
+ }
 </style>
     
     <!-- Scripts -->
@@ -530,7 +550,7 @@ registrarVisita($conexion_store);
         <div class="hero-bg" id="hero-bg"></div>
         <div class="hero-overlay" id="hero-overlay"></div>
         <div class="hero-content py-3">
-            <h1 class="hero-title text-white" id="hero-text">¡Compras gratis! Cada 5 niveles obtén $5 para gastar en los productos que desees.</h1>
+            <h1 class="hero-title text-white" id="hero-text"></h1>
             <p class="lead mb-4 text-white"><b>Puerto Ayacucho ❤️ Edo Amazonas.</b> <br> <a data-bs-toggle="modal" data-bs-target="#modalUbicacion" class="text-white pointer">Consulta nuestra ubicación</a></p>
 
             <div class="d-flex flex-wrap justify-content-center gap-2">
@@ -963,6 +983,7 @@ registrarVisita($conexion_store);
     <script src="assets/js/custom.js"></script>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/@mapbox/leaflet-pip@latest/leaflet-pip.js"></script>
     <!-- Notiflix Library -->
     <script src="assets/dist/notiflix-Notiflix-67ba12d/dist/notiflix-aio-3.2.8.min.js"></script>
 
@@ -984,6 +1005,10 @@ registrarVisita($conexion_store);
 
         const base_url = 'core/';
         let userRewards = [];
+
+        // Defaults from user profile for address form
+        const DEFAULT_RECEPTOR = "<?php echo $loyaltyData['nombre'] ?? ''; ?>";
+        const DEFAULT_TELEFONO = "<?php echo $loyaltyData['telefono'] ?? ''; ?>";
 
         // Initialize UI Elements
         document.addEventListener('DOMContentLoaded', () => {
@@ -1078,11 +1103,9 @@ registrarVisita($conexion_store);
                     const lat = 5.642498;
                     const lng = -67.602170; 
 
-
-
                     mapTienda = L.map('map-tienda').setView([lat, lng], 14);
 
-                    googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+                    googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
                             maxZoom: 20,
                             subdomains:['mt0','mt1','mt2','mt3']
                     });
@@ -1092,10 +1115,13 @@ registrarVisita($conexion_store);
                     L.marker([lat, lng]).addTo(mapTienda)
                         .bindPopup('<b>iSeller Store</b><br>Nuestra Tienda Física.')
                         .openPopup();
-                } else {
-                    // Refrescar tamaño para corregir problemas de renderizado en modales
-                    mapTienda.invalidateSize();
                 }
+                
+                // Refrescar tamaño para corregir problemas de renderizado en modales
+                // Se añade un pequeño delay para asegurar que el modal haya terminado su transición
+                setTimeout(() => {
+                    if (mapTienda) mapTienda.invalidateSize();
+                }, 250);
             });
         });
 
@@ -1105,7 +1131,6 @@ registrarVisita($conexion_store);
                 const data = await res.json();
                 userRewards = data.rewards || [];
                 actualizarCarritoJs();
-                console.log(data)
                 if(data.success && data.has_rewards) {
                     // Update UI to show rewards available
                     const rewardsContainer = document.querySelector('#reward-dropdown');
@@ -1172,10 +1197,14 @@ registrarVisita($conexion_store);
                     stock: item.s,
                     mayor: item.m,
                     precio_dolar_visible: item.pd,
-                    precio_peso_visible: item.pp,
+                    precio_weight_visible: item.pp,
                     precio_bs_visible: item.pb,
                     precio_costo: item.pc,
-                    categorias: item.ca || ''
+                    precio_costo_bs: item.pc_bs,
+                    categorias: item.ca || '',
+                    sucursal: item.sucursal || '',
+                    id_sucursal: item.id_sucursal,
+                    bss_id: item.bss_id
                 }));
                 
                 fuse = new Fuse(searchItems, {
@@ -1203,10 +1232,11 @@ registrarVisita($conexion_store);
          * ==========================================
          */
       const heroSlides = [
-            { text: "¡Compras gratis! Cada 5 niveles obtén $5 para gastar en los productos que desees.", img: "assets/img/bg-hero.png" },
+            { text: "Actualiza tu ubicación y Verifica si aplica para delivery GRATIS. <?php if(isLoggedIn()): ?><a id='btn-actualizar-ubicacion' class='btn btn-success'>Verificar Ubicación</a><?php endif; ?>", img: "assets/img/bg-hero-0.png" },
             { text: "Sube de nivel invitando a tus amigos, cada referido te da 3 puntos.", img: "assets/img/bg-hero-1.png" },
             { text: "¡Hazle el mercado a un familiar! Agrega su dirección y nosotros nos encargamos del resto.", img: "assets/img/bg-hero-2.png" },
             { text: "Sube de nivel y gana: cada 5 niveles recibe recompensas en efectivo para tus compras.", img: "assets/img/bg-hero-3.png" },
+            { text: "¡Compras gratis! Cada 5 niveles obtén $5 para gastar en los productos que desees.", img: "assets/img/bg-hero.png" },
         ];
 
 // Precarga imágenes
@@ -1238,7 +1268,7 @@ function rotateHero() {
         const slide = heroSlides[heroSlideIndex];
 
         // Cambio EXACTAMENTE sincronizado
-        heroTextElement.innerText = slide.text;
+        heroTextElement.innerHTML = slide.text;
         heroBgElement.style.backgroundImage = `url('${slide.img}')`;
 
         // Fade in
@@ -1252,6 +1282,15 @@ function rotateHero() {
     }, FADE_TIME);
 }
 
+function initHero() {
+    const slide = heroSlides[0];
+    if (heroTextElement) heroTextElement.innerHTML = slide.text;
+    if (heroBgElement) heroBgElement.style.backgroundImage = `url('${slide.img}')`;
+}
+
+
+
+
 // Arranque estable con timeout recursivo (NO setInterval)
 function startHeroSlider() {
     setTimeout(function loop() {
@@ -1259,6 +1298,9 @@ function startHeroSlider() {
         setTimeout(loop, SLIDE_TIME);
     }, SLIDE_TIME);
 }
+
+// Inicializar primer slide inmediatamente
+initHero();
 
 if (heroSlides.length > 1) {
     startHeroSlider();
@@ -1302,7 +1344,7 @@ if (heroSlides.length > 1) {
             
             if (nombreProducto.length > 2) {
                 let resultados = buscarConFuse(nombreProducto)
-                mostrarResultadosBusqueda(resultados, resultsContainer)
+                mostrarResultadosBusqueda(resultados, resultsContainer, userRewards[0])
             } else {
                 $(resultsContainer).html('').removeClass('show');
             }
@@ -1315,7 +1357,7 @@ if (heroSlides.length > 1) {
             }
         });
 
-        function mostrarResultadosBusqueda(resultados, containerSelector = '#search-results') {
+        function mostrarResultadosBusqueda(resultados, containerSelector = '#search-results', recompensas = null) {
             const searchResults = $(containerSelector);
             searchResults.html('');
             
@@ -1327,12 +1369,30 @@ if (heroSlides.length > 1) {
 
             let html = '<div class="list-group list-group-flush">';
             resultados.slice(0, 8).forEach(item => {
-                // Sincronizar con el cache global para que addtocarJS lo encuentre
+
                 productos_por_id[item.id] = item;
-                
-                const rest = (item.mayor === '1' ?
-                    '<span class="badge bg-success-subtle text-success border border-success-subtle">Mayor</span>' :
-                    `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Stock: ${item.stock}</span>`);
+
+                let precio_dolar_visible = item.precio_dolar_visible;
+                let precio_bs_visible = item.precio_bs_visible;
+
+                let precio_dolar_html = `$${formatNumber(precio_dolar_visible)}`;
+                let precio_bs_html = `${formatNumber(recortarADosDecimales(precio_bs_visible))} Bs`;
+
+                if (recompensas) {
+                    const tipo_recompensa = recompensas.tipo;
+                    if (tipo_recompensa === 'descuento_ganancia') {
+                        let old_pd = precio_dolar_html;
+                        let old_pb = precio_bs_html;
+
+                        precio_dolar_visible = item.precio_costo;
+                        precio_bs_visible = item.precio_costo_bs;
+
+                        precio_dolar_html = `$${formatNumber(recortarADosDecimales(precio_dolar_visible))} <span class="text-decoration-line-through text-danger text-xs" style="font-size: 0.7rem;">${old_pd}</span> `;
+                        precio_bs_html = `${formatNumber(recortarADosDecimales(precio_bs_visible))} Bs <span class="text-decoration-line-through text-danger text-xs" style="font-size: 0.7rem;">${old_pb}</span> `;
+                    }
+                }
+
+                let rest = '';
 
                 html += `
                     <div class="list-group-item list-group-item-action border-0 border-bottom py-3" style="cursor: pointer;" onclick="seleccionarProductoBusqueda('${item.id}')">
@@ -1347,25 +1407,45 @@ if (heroSlides.length > 1) {
                                 </div>
                                 <div class="d-flex gap-3 small">
                                     <span class="fw-bold text-success">
-                                        $${formatNumber(item.precio_dolar_visible)}
+                                        ${precio_dolar_html}
                                     </span>
                                     <span class="text-muted border-start ps-3">
-                                        ${formatNumber(recortarADosDecimales(item.precio_bs_visible))} Bs
+                                        ${precio_bs_html}
                                     </span>
                                 </div>
+                                ${item.sucursal === 'loreamny' ? `
+                                <div class="mt-1">
+                                    <span class="badge-aliado"><i class="bi bi-patch-check-fill"></i> Aliado Comercial</span>
+                                </div>` : ''}
                             </div>
                             <div class="d-flex align-items-center gap-2" >
                                 <div class="quantity-control form-control-sm border px-1">
-                                    <input type="number" class="qty-input form-control-plaintext p-0 text-center" 
-                                        data-cantidad-id="${item.id}" value="1" style="width: 40px; height: 30px;">
+                                    ${(()=>{
+                                        const _isD = DECIMAL_QTY_IDS.has(String(item.id));
+                                        const _step = _isD ? '0.5' : '1';
+                                        const _min  = _isD ? '0.5' : '1';
+                                        const _val  = _isD ? '0.5' : '1';
+                                        return `
+                                            <button class="btn-qty" onclick="changeQty(this, -1)" style="border:none;background:none;font-weight:bold;cursor:pointer;padding:0 4px;">-</button>
+                                            <input type="number" class="qty-input form-control-plaintext p-0 text-center" 
+                                                data-cantidad-id="${item.id}"
+                                                value="${_val}" min="${_min}"
+                                                data-step="${_step}" data-min="${_min}"
+                                                step="${_step}" readonly
+                                                style="width: 40px; height: 30px;">
+                                            <button class="btn-qty" onclick="changeQty(this, 1, null)" style="border:none;background:none;font-weight:bold;cursor:pointer;padding:0 4px;">+</button>
+                                        `;
+                                    })()}
                                 </div>
                                 <button class="btn btn-sm btn-action-primary d-flex align-items-center justify-content-center btn-add-to-car" 
                                     style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary-color); color: white; border: none;"
                                     data-add-id="${item.id}"
                                     data-codigo="${item.codigo || ''}"
-                                    data-P_D="${item.precio_dolar_visible}"
-                                    data-P_P="${item.precio_peso_visible}"
-                                    data-P_B="${item.precio_bs_visible}">
+                                    data-P_D="${precio_dolar_visible}"
+                                    data-P_P="${item.precio_weight_visible}"
+                                    data-P_B="${precio_bs_visible}"
+                                    data-P_C="${item.precio_costo}"
+                                    data-P_C_BS="${item.precio_costo_bs}">
                                     <i class="bi bi-plus-lg"></i>
                                     <span class="cart-item-anim"></span>
                                 </button>
@@ -1373,6 +1453,16 @@ if (heroSlides.length > 1) {
                         </div>
                     </div>
                 `;
+                /*
+
+  data-add-id="${producto.id}"
+                                        data-codigo="${producto.codigo || ''}"
+                                        data-P_D="${precio_dolar_visible}"
+                                        data-P_B="${precio_bs_visible}"
+                                        data-P_C="${producto.precio_costo}"
+                                        data-P_C_BS="${producto.precio_costo_bs}">
+
+                */
             });
             html += '</div>';
             searchResults.html(html);
@@ -1513,7 +1603,8 @@ if (heroSlides.length > 1) {
 
             listaProductos.forEach(producto => {
                
-                const isOutOfStock = producto.stock <= 0 && producto.mayor !== '1';
+                const isSocio = producto.sucursal === 'loreamny';
+                const isOutOfStock = !isSocio && producto.stock <= 0 && producto.mayor !== '1';
                 const opacityClass = isOutOfStock ? 'opacity-50 grayscale' : '';
                 const btnDisabled = isOutOfStock ? 'disabled btn-disabled' : '';
                 const btnText = isOutOfStock ? 'Agotado' : '';
@@ -1528,19 +1619,16 @@ if (heroSlides.length > 1) {
 
                     if (recompensas) {
                         const tipo_recompensa = recompensas.tipo;
-
                         if (tipo_recompensa === 'descuento_ganancia') {
-                            precio_dolar_visible = producto.costo_dolar;
-                            precio_bs_visible = producto.costo_bs;
-                            precio_dolar = `$${formatNumber(recortarADosDecimales(producto.costo_dolar))} <span class="text-decoration-line-through text-danger text-xs">${precio_dolar}</span> `;
-                            precio_bs = `Bs ${formatNumber(recortarADosDecimales(producto.costo_bs))} <span class="text-decoration-line-through text-danger text-sm">${precio_bs}</span> `;
+                            precio_dolar_visible = producto.precio_costo;
+                            precio_bs_visible = producto.precio_costo_bs;
+                            precio_dolar = `$${formatNumber(recortarADosDecimales(producto.precio_costo))} <span class="text-decoration-line-through text-danger text-xs">${precio_dolar}</span> `;
+                            precio_bs = `Bs ${formatNumber(recortarADosDecimales(producto.precio_costo_bs))} <span class="text-decoration-line-through text-danger text-sm">${precio_bs}</span> `;
                         }
                     }
 
-
                 // Preparing Image source for modal interaction
                 const imgSrc = producto.img != '' ? producto.img : `https://placehold.co/400x400/f3f4f6/a3a3a3?text=${producto.nombre.substring(0,2)}`;
-
                 let card = `
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3 product-item">
                         <div class="product-card ${opacityClass}">
@@ -1550,31 +1638,36 @@ if (heroSlides.length > 1) {
                                      class="product-img imagen-cuadrada" alt="${producto.nombre}">`;
                             card += `</div>
                             <div class="product-body">
-                      
                                 <h3 class="product-title" title="${producto.nombre}">${producto.nombre}</h3>
-                                <div class="product-category mb-1">
+                                <div class="product-category mb-1 d-flex justify-content-between" style="align-items: baseline;">
                                     <span class="badge bg-light text-muted fw-normal p-0" style="font-size: 0.75rem;">
                                         <i class="bi bi-tag small"></i> ${producto.categorias || 'Sin categoría'}
                                     </span>
+                                    ${isSocio ? `<div class="badge-aliado"><i class="bi bi-patch-check-fill"></i> Aliado</div>` : ''}
                                 </div>
-                                
-                                <div class="price-container">
+                                <div class="price-container mt-0">
                                     <div class="price-main"><span class="price-dolar">${precio_dolar}</span></div>
                                     <div class="price-sub small text-muted"><span class="price-bs">${precio_bs}</span></div>
                                 </div>
-
                                 <div class="card-actions">
                                     <div class="quantity-control">
                                         <button class="btn-qty" onclick="changeQty(this, -1)">-</button>
                                         <input type="number" class="qty-input" 
-                                            data-cantidad-id="${producto.id}" value="1" min="1" readonly>
-                                        <button class="btn-qty" onclick="changeQty(this, 1, ${producto.stock})">+</button>
+                                            data-cantidad-id="${producto.id}"
+                                            value="${DECIMAL_QTY_IDS.has(String(producto.id)) ? '0.5' : '1'}"
+                                            min="${DECIMAL_QTY_IDS.has(String(producto.id)) ? '0.5' : '1'}"
+                                            data-step="${DECIMAL_QTY_IDS.has(String(producto.id)) ? '0.5' : '1'}"
+                                            data-min="${DECIMAL_QTY_IDS.has(String(producto.id)) ? '0.5' : '1'}"
+                                            step="${DECIMAL_QTY_IDS.has(String(producto.id)) ? '0.5' : '1'}" readonly>
+                                        <button class="btn-qty" onclick="changeQty(this, 1, ${isSocio ? null : producto.stock})">+</button>
                                     </div>
                                     <button style="height: 37px;" class="btn btn-sm btn-add btn-add-to-car ${btnDisabled}" 
                                         data-add-id="${producto.id}"
                                         data-codigo="${producto.codigo || ''}"
                                         data-P_D="${precio_dolar_visible}"
-                                        data-P_B="${precio_bs_visible}">
+                                        data-P_B="${precio_bs_visible}"
+                                        data-P_C="${producto.precio_costo}"
+                                        data-P_C_BS="${producto.precio_costo_bs}">
                                         <i class="bi bi-cart-plus"></i> ${btnText}
                                         <span class="cart-item-anim"></span>
                                     </button>
@@ -1645,46 +1738,11 @@ if (heroSlides.length > 1) {
             const input = document.getElementById('modal-product-qty');
             let val = parseInt(input.value) || 1;
             val += delta;
-            
-            // Logic to check max stock could be added here if we had current stock handy easily in scope
-            // For now, simpler check
             if (val < 1) val = 1;
             
-            // We can check stock from the current button data if needed, but let's assume loose check or add param
-            // const btn = document.getElementById('modal-btn-add');
-            // const pid = btn.dataset.addId;
-            // const product = productos_por_id[pid];
-            // if (product && val > product.stock && product.mayor != '1') val = product.stock;
-
             input.value = val;
-            
-            // Sync with the specific product card input if we want seamless experience?
-            // Not strictly required but nice. Leaving simple for now.
         }
 
-        // Override the global click listener for the modal button to use specific input
-        // Actually the global listener `document.addEventListener('click'...` handles `.btn-add-to-car`
-        // It looks for `input[data-cantidad-id="${id}"]`. 
-        // Our modal input DOES NOT have `data-cantidad-id`.
-        // So we need to tweak `addtocarJS` OR the click listener.
-        
-        // Let's modify the click listener or `addtocarJS` to accept an explicit quantity value fallback.
-        // `addtocarJS` already accepts `cantidad_scann`. We can use that.
-        
-        // Let's modify the modal add button onclick to call addtocarJS directly instead of relying on the generic listener,
-        // OR modify the generic listener to handle the modal context.
-        // The generic listener finds ".btn-add-to-car". Our modal button HAS this class.
-        // It then calls `addtocarJS(..., null, null, btn)`.
-        // Inside `addtocarJS`: `const inputCantidad = document.querySelector('input[data-cantidad-id="${id}"]');`
-        // It will find the GRID input. This is actually fine! It will add the grid ID's quantity.
-        // BUT we want the MODAL's quantity.
-        
-        // FIX: Remove `.btn-add-to-car` class from the Modal button and give it a unique listener or ID,
-        // OR update the generic listener.
-        // Updating generic listener is risky for regressions.
-        // Better: specific listener for modal add button.
-        
-        // I'll add an ID listener for `modal-btn-add` at the end of this block.
 
         // Intersection Observer
         const observer = new IntersectionObserver((entries) => {
@@ -1696,17 +1754,24 @@ if (heroSlides.length > 1) {
 
         observer.observe(sentinel);
 
-        // Cargar primera pagina
-        // cargarMasProductos(); // El observer lo llamará automáticamente al estar visible el sentinel vacío
+
+        
+
+
 
 
         // Helper for quantity buttons
+        const DECIMAL_QTY_IDS = new Set([4584, 4789, 5330, 4087, 4362, 4796, 4798, 4660, 4102, 1658, 2874, 1628, 2872, 1659, 3803, 3805, 1652, 4097, 1652, 3806, 1684, 1627].map(String));
+
         window.changeQty = function(btn, delta, max = null) {
             const input = btn.parentNode.querySelector('input');
-            let val = parseInt(input.value) || 1;
-            val += delta;
-            if(val < 1) val = 1;
-            if(max != null && val > max) val = max;
+            const step   = parseFloat(input.dataset.step)  || 1;
+            const minVal = parseFloat(input.dataset.min)   || step;
+            let val = parseFloat(input.value);
+            if (isNaN(val)) val = minVal;
+            val = Math.round((val + delta * step) * 100) / 100;
+            if (val < minVal) val = minVal;
+            if (max != null && max > 0 && val > max) val = max;
             input.value = val;
         };
 
@@ -1729,11 +1794,10 @@ if (heroSlides.length > 1) {
                 let dolarventa_p = btn.getAttribute('data-P_D')
                 let pesoventa_p = btn.getAttribute('data-P_P')
                 let bolivarventa_p = btn.getAttribute('data-P_B')
-                
+
                 $('#search, #search-mobile').val('')
                 $("#search-results, #search-results-mobile").removeClass('show');
-                
-                addtocarJS(id_p, dolarventa_p, pesoventa_p, bolivarventa_p, null, null, btn);
+                addtocarJS(id_p, dolarventa_p, pesoventa_p, bolivarventa_p, null, null);
             }
         });
 
@@ -1781,7 +1845,9 @@ if (heroSlides.length > 1) {
                     btnMod.dataset.p_b, 
                     null, 
                     qty, 
-                    btnMod
+                    btnMod,
+                    btnMod.dataset.p_c,
+                    btnMod.dataset.p_c_bs
                 );
             }
         });
@@ -1836,6 +1902,371 @@ if (heroSlides.length > 1) {
             }, {});
             actualizarCarritoJs();
         }
+
+
+
+
+        /* Actualizar ubicacion */
+        let mapUbicacion, markerUbicacion, geojsonLayer;
+        const freeDeliveryComs = ["JOSE ANTONIO PAEZ", "LA FLORIDA", "CHAPARRALITO", "EL POLIGONO", "URB EL CAICET", "URB AV DEL EJERCITO", "SIMON BOLIVAR", "CARINAGUITA", "JOSE MARIA VARGAS"];
+
+        // --- CONFIGURACIÓN DE GEOCERCA ---
+        const GEOFENCE_CENTER = [5.653802, -67.605304];
+        const GEOFENCE_RADIUS = 6500; // 6.5 kilómetros en metros
+        let geofenceCircle = null;
+
+        function isWithinPerimeter(lat, lng) {
+            if (!lat || !lng) return false;
+            const center = L.latLng(GEOFENCE_CENTER);
+            const target = L.latLng(lat, lng);
+            return center.distanceTo(target) <= GEOFENCE_RADIUS;
+        }
+
+        async function actualizarUbicacion() {
+            const modal = new bootstrap.Modal(document.getElementById('modalGestionUbicacion'));
+            modal.show();
+            
+            // Siempre mostrar la lista al abrir
+            regresarALista();
+
+            // Cargar direcciones
+            try {
+                const res = await fetch('api/perfil_data.php');
+                const data = await res.json();
+                if(data.success) {
+                    renderListaUbicaciones(data.addresses);
+                }
+            } catch (e) {
+                console.error("Error cargando direcciones:", e);
+            }
+
+            // Inicializar mapa si no existe
+            if (!mapUbicacion) {
+                setTimeout(() => {
+                    mapUbicacion = L.map('map-gestion').setView(GEOFENCE_CENTER, 13);
+                    L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+                        subdomains: ['mt0','mt1','mt2','mt3'],
+                        maxZoom: 20
+                    }).addTo(mapUbicacion);
+                    
+                    // Dibujar Círculo de Perímetro (Geocerca)
+                    geofenceCircle = L.circle(GEOFENCE_CENTER, {
+                        color: '#198754',      // Verde Bootstrap
+                        fillColor: '#25ca7dff',
+                        fillOpacity: 0.1,
+                        radius: GEOFENCE_RADIUS,
+                        weight: 2,
+                        dashArray: '5, 10',
+                        interactive: false
+                    }).addTo(mapUbicacion);
+
+                    let allCommunitiesNames = [];
+                    fetch('assets/js/comunidades.geojson')
+                        .then(r => r.json())
+                        .then(geoData => {
+                            allCommunitiesNames = geoData.features.map(f => f.properties.NAME).sort();
+                            
+                            geojsonLayer = L.geoJSON(geoData, {
+                                style: function(feature) {
+                                    const isFree = freeDeliveryComs.includes(feature.properties.NAME.toUpperCase());
+                                    return {
+                                        color: isFree ? "#198754" : "#bfd8ffff", // Verde si es gratis, Azul si es pago
+                                        weight: 2,
+                                        fillOpacity: 0.1
+                                    };
+                                }
+                            }).addTo(mapUbicacion);
+                        });
+
+                    // Intentar obtener geolocalización del navegador
+                    if ("geolocation" in navigator) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const lat = position.coords.latitude;
+                                const lng = position.coords.longitude;
+                                
+                                if (isWithinPerimeter(lat, lng)) {
+                                    // Actualizar mapa y marcador si está dentro
+                                    mapUbicacion.setView([lat, lng], 18);
+                                    
+                                    if (markerUbicacion) mapUbicacion.removeLayer(markerUbicacion);
+                                    markerUbicacion = L.marker([lat, lng]).addTo(mapUbicacion);
+                                    
+                                    document.getElementById('loc-lat').value = lat;
+                                    document.getElementById('loc-lng').value = lng;
+                                    
+                                    Notiflix.Notify.success('Ubicación detectada exitosamente');
+                                } else {
+                                    mapUbicacion.setView(GEOFENCE_CENTER, 14);
+                                }
+                            },
+                            (error) => {
+                                console.warn('Error de geolocalización:', error.message);
+                            },
+                            {
+                                enableHighAccuracy: true,
+                                timeout: 5000,
+                                maximumAge: 0
+                            }
+                        );
+                    }
+
+                    mapUbicacion.on('click', function(e) {
+                        if (!isWithinPerimeter(e.latlng.lat, e.latlng.lng)) {
+                            Notiflix.Notify.failure('La ubicación seleccionada está fuera de nuestra zona de entrega.');
+                            mapUbicacion.panTo(GEOFENCE_CENTER);
+                            return;
+                        }
+
+                        const results = leafletPip.pointInLayer(e.latlng, geojsonLayer);
+                        if (results.length > 0) {
+                            const comName = results[0].feature.properties.NAME;
+                            const isFree = freeDeliveryComs.includes(comName.toUpperCase());
+                            
+                            document.getElementById('loc-comunidad').value = comName;
+                            document.getElementById('loc-comunidad-input').value = comName;
+                            document.getElementById('loc-delivery-gratis').value = isFree ? 1 : 0;
+                            
+                            if (isFree) {
+                                Notiflix.Notify.success('¡Excelente! Esta zona cuenta con delivery GRATIS.');
+                            } else {
+                                Notiflix.Notify.info('Zona seleccionada: Entrega disponible con cargo de $2.');
+                            }
+                            
+                            if (markerUbicacion) mapUbicacion.removeLayer(markerUbicacion);
+                            markerUbicacion = L.marker(e.latlng).addTo(mapUbicacion);
+                            document.getElementById('loc-lat').value = e.latlng.lat;
+                            document.getElementById('loc-lng').value = e.latlng.lng;
+                        } else {
+                            Notiflix.Notify.warning('Por favor selecciona una ubicación sobre una de las comunidades marcadas.');
+                        }
+                    });
+
+                    // --- LOGICA BUSQUEDA DE COMUNIDADES ---
+                    const inputCom = document.getElementById('loc-comunidad-input');
+                    const resultsDiv = document.getElementById('loc-community-results');
+
+                    inputCom.addEventListener('input', (e) => {
+                        const query = e.target.value.toLowerCase();
+                        if (query.length < 2) {
+                            resultsDiv.style.display = 'none';
+                            return;
+                        }
+
+                        // Filtrar todas las comunidades
+                        const matches = allCommunitiesNames.filter(c => c.toLowerCase().includes(query));
+                        
+                        if (matches.length > 0) {
+                            let html = '';
+                            matches.forEach(m => {
+                                html += `<div class="community-item" onclick="seleccionarComunidadGestion('${m}')">${m}</div>`;
+                            });
+                            resultsDiv.innerHTML = html;
+                            resultsDiv.style.display = 'block';
+                        } else {
+                            resultsDiv.style.display = 'none';
+                        }
+                    });
+
+                    document.addEventListener('click', (e) => {
+                        if (inputCom && resultsDiv && !inputCom.contains(e.target) && !resultsDiv.contains(e.target)) {
+                            resultsDiv.style.display = 'none';
+                        }
+                    });
+
+                    window.seleccionarComunidadGestion = function(name) {
+                        inputCom.value = name;
+                        document.getElementById('loc-comunidad').value = name;
+                        const isFree = freeDeliveryComs.includes(name.toUpperCase());
+                        document.getElementById('loc-delivery-gratis').value = isFree ? 1 : 0;
+                        resultsDiv.style.display = 'none';
+
+                        if (isFree) {
+                            Notiflix.Notify.success('¡Excelente! Esta zona cuenta con delivery GRATIS.');
+                        } else {
+                            Notiflix.Notify.info('Zona seleccionada: Entrega disponible con cargo de $2.');
+                        }
+
+                        // Zoom al polígono si existe
+                        if (geojsonLayer) {
+                            geojsonLayer.eachLayer(layer => {
+                                if (layer.feature.properties.NAME.toUpperCase() === name.toUpperCase()) {
+                                    mapUbicacion.fitBounds(layer.getBounds(), { padding: [20, 20] });
+                                }
+                            });
+                        }
+                    };
+                }, 500);
+            }
+        }
+
+        function renderListaUbicaciones(addresses) {
+            const container = document.getElementById('lista-ubicaciones-user');
+            container.innerHTML = '';
+            
+            if (addresses.length === 0) {
+                container.innerHTML = '<div class="p-3 text-center text-muted">No tienes ubicaciones guardadas.</div>';
+                return;
+            }
+
+            addresses.forEach(addr => {
+                const div = document.createElement('div');
+                div.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                div.innerHTML = `
+                    <div class="flex-grow-1">
+                        <div class="fw-bold text-uppercase small text-success">${addr.nombre_receptor || 'Sin nombre'}</div>
+                        <div class="small fw-semibold text-dark">${addr.direccion}</div>
+                        <small class="text-muted d-block">${addr.comunidad || 'Sin comunidad'}</small>
+                        <small class="fw-bold d-block ${addr.delivery_gratis_confirmado == 1 ? 'text-success' : 'text-primary'}" style="font-size: 0.75rem;">
+                            <i class="bi bi-truck me-1"></i>${addr.delivery_gratis_confirmado == 1 ? 'DELIVERY GRATIS' : 'DELIVERY $2'}
+                        </small>
+                    </div>
+                    <button class="btn btn-sm btn-success rounded-pill px-3" onclick='editarUbicacion(${JSON.stringify(addr)})'>Actualizar</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.editarUbicacion = function(addr) {
+            document.getElementById('loc-form').reset();
+            document.getElementById('loc-form-title').innerText = 'Actualizar Ubicación';
+            document.getElementById('loc-id').value = addr.id;
+            document.getElementById('loc-nombre').value = addr.nombre_receptor || DEFAULT_RECEPTOR;
+            document.getElementById('loc-telefono').value = addr.telefono || DEFAULT_TELEFONO;
+            document.getElementById('loc-comunidad-input').value = addr.comunidad || '';
+            document.getElementById('loc-direccion').value = addr.direccion;
+            document.getElementById('loc-referencia').value = addr.referencia || '';
+            document.getElementById('loc-comunidad').value = addr.comunidad || '';
+            document.getElementById('loc-lat').value = addr.lat;
+            document.getElementById('loc-lng').value = addr.lng;
+            document.getElementById('loc-delivery-gratis').value = addr.delivery_gratis_confirmado || 0;
+
+            // Ocultar sección de datos exactos si es actualización
+            const soloNuevo = document.getElementById('solo_nuevo_registro');
+            if(soloNuevo) soloNuevo.classList.add('d-none');
+
+            // --- VALIDACION AUTOMATICA PARA DELIVERY GRATIS ---
+            const notifGratis = document.getElementById('notif-delivery-gratis');
+            if (notifGratis) notifGratis.classList.add('d-none');
+
+            if (addr.lat && addr.lng && geojsonLayer) {
+                const results = leafletPip.pointInLayer([addr.lng, addr.lat], geojsonLayer); // Nota: LeafletPip usa [lng, lat]
+                if (results.length > 0) {
+                    const comName = results[0].feature.properties.NAME;
+                    const isFree = freeDeliveryComs.includes(comName.toUpperCase());
+                    document.getElementById('loc-comunidad').value = comName;
+                    document.getElementById('loc-comunidad-input').value = comName;
+                    document.getElementById('loc-delivery-gratis').value = isFree ? 1 : 0;
+                    if (notifGratis && isFree) notifGratis.classList.remove('d-none');
+                } else {
+                    document.getElementById('loc-delivery-gratis').value = 0; // Asegurar 0 si está fuera
+                }
+            }
+
+            if (markerUbicacion) mapUbicacion.removeLayer(markerUbicacion);
+            const latlng = [addr.lat, addr.lng];
+            markerUbicacion = L.marker(latlng).addTo(mapUbicacion);
+            mapUbicacion.setView(latlng, 16);
+            
+            document.getElementById('view-lista-ubicaciones').classList.add('d-none');
+            document.getElementById('view-form-ubicacion').classList.remove('d-none');
+            
+            // Fix gray map issue
+            setTimeout(() => {
+                
+                mapUbicacion.invalidateSize();
+                mapUbicacion.setView(latlng, 16);
+            }, 200);
+        };
+
+        window.mostrarFormNuevaUbicacion = function() {
+            document.getElementById('loc-form').reset();
+            document.getElementById('loc-comunidad-input').value = '';
+            document.getElementById('loc-form-title').innerText = 'Agregar Nueva Ubicación';
+            document.getElementById('loc-id').value = '';
+            document.getElementById('loc-nombre').value = DEFAULT_RECEPTOR;
+            document.getElementById('loc-telefono').value = DEFAULT_TELEFONO;
+
+            // Mostrar sección de datos exactos si es nuevo registro
+            const soloNuevo = document.getElementById('solo_nuevo_registro');
+            if(soloNuevo) soloNuevo.classList.remove('d-none');
+
+            // Resetear notificación de delivery gratis
+            const notifGratis = document.getElementById('notif-delivery-gratis');
+            if (notifGratis) notifGratis.classList.add('d-none');
+            if (markerUbicacion) mapUbicacion.removeLayer(markerUbicacion);
+            
+            document.getElementById('view-lista-ubicaciones').classList.add('d-none');
+            document.getElementById('view-form-ubicacion').classList.remove('d-none');
+
+            // Fix gray map issue
+            setTimeout(() => {
+                mapUbicacion.invalidateSize();
+            }, 200);
+        };
+
+        window.regresarALista = function() {
+            document.getElementById('view-form-ubicacion').classList.add('d-none');
+            document.getElementById('view-lista-ubicaciones').classList.remove('d-none');
+            
+            const notifGratis = document.getElementById('notif-delivery-gratis');
+            if (notifGratis) notifGratis.classList.add('d-none');
+        };
+
+        window.guardarGestionUbicacion = async function() {
+            const payload = {
+                id: document.getElementById('loc-id').value,
+                nombre_receptor: document.getElementById('loc-nombre').value,
+                telefono: document.getElementById('loc-telefono').value,
+                direccion: document.getElementById('loc-direccion').value,
+                referencia: document.getElementById('loc-referencia').value,
+                lat: document.getElementById('loc-lat').value,
+                lng: document.getElementById('loc-lng').value,
+                comunidad: document.getElementById('loc-comunidad').value,
+                delivery_gratis_confirmado: document.getElementById('loc-delivery-gratis').value
+            };
+
+            if (!payload.direccion || !payload.lat) {
+                Notiflix.Notify.failure('Por favor completa todos los datos y selecciona en el mapa.');
+                return;
+            }
+
+            Notiflix.Loading.pulse('Guardando...');
+
+
+              const res = await fetch('api/update_location.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                let data = await res.text();
+
+                
+            try {
+                data = JSON.parse(data);
+                
+                Notiflix.Loading.remove();
+
+                if (data.success) {
+                    Notiflix.Notify.success(data.message);
+                    bootstrap.Modal.getInstance(document.getElementById('modalGestionUbicacion')).hide();
+                    // Opcional: recargar vista o datos si es necesario
+                } else {
+                    Notiflix.Notify.failure(data.message);
+                }
+            } catch (e) {
+                Notiflix.Loading.remove();
+                Notiflix.Notify.failure('Error en el servidor');
+            }
+        };
+
+        $(document).ready(function() {
+            $(document).on('click', '#btn-actualizar-ubicacion', function() {
+                actualizarUbicacion();
+            });
+        });
+
+
 
 
          let toastTimeout;
@@ -1905,11 +2336,16 @@ if (heroSlides.length > 1) {
 
             const totalQtyToCheck = newQty + currentInCart;
 
-            const disponible = await verificarStock(id, totalQtyToCheck);
-            
-            if (!disponible['result']) {
-                Notiflix.Notify.failure(disponible['message']);
-                return;
+            // Productos del socio (loreamny) no requieren verificación de stock
+            const productoCache = productos_por_id[id.toString()];
+            const esSocio = productoCache && productoCache.sucursal === 'loreamny';
+
+            if (!esSocio) {
+                const disponible = await verificarStock(id, totalQtyToCheck);
+                if (!disponible['result']) {
+                    Notiflix.Notify.failure(disponible['message']);
+                    return;
+                }
             }
 
             if (btnElement) {
@@ -1945,22 +2381,27 @@ if (heroSlides.length > 1) {
 
             if (carritoActivo[idPedido]) {
                 carritoActivo[idPedido].qty += cant;
+                // Actualizar por si acaso (items viejos o búsqueda incompleta)
+                carritoActivo[idPedido].id_sucursal = producto.id_sucursal;
+                carritoActivo[idPedido].bss_id = producto.bss_id;
             } else {
                 carritoActivo[idPedido] = {
                     id: idPedido,
                     name: producto.nombre,
-                    price_C: parseFloat(producto.price_C),
-                    price_C_Bs: parseFloat(producto.price_C_Bs),
-                    price_C_Cop: parseFloat(producto.price_C_Cop),
+                    price_C: parseFloat(producto.precio_costo),
+                    price_C_Bs: parseFloat(producto.precio_costo_bs),
                     price: parseFloat(dolarventa_p),
                     pricePeso: parseFloat(pesoventa_p),
                     priceBolivar: parseFloat(bolivarventa_p),
                     qty: cant,
                     mayor: mayor,
                     cantidadPaca: 1,
-                    priceCosto: parseFloat(producto.precio_costo)
+                    priceCosto: parseFloat(producto.precio_costo),
+                    bss_id: producto.bss_id,
+                    id_sucursal: producto.id_sucursal
                 };
             }
+         
 
             if (carritoActivo[idPedido].qty == 0) {
                 await db.carritoActivo.delete(idPedido);
@@ -2364,12 +2805,6 @@ if (heroSlides.length > 1) {
                                 
                                 if (disponible.result) {
                                     // Agregar a carrito activo
-                                    // Nota: necesitamos tener el producto en productos_por_id para que addtocarJS funcione plenamente
-                                    // pero como estamos cargando un carrito guardado, ya tenemos los datos básicos.
-                                    // Sin embargo, es mejor asegurar que productos_por_id tenga el item o cargarlo.
-                                    // Para simplificar, si el producto existe en el guardado, lo metemos directo a IndexedDB
-                                    // y actualizamos la variable global.
-                                    
                                     carritoActivo[item.id] = item;
                                     await db.carritoActivo.put(item);
                                     loadedCount++;
@@ -2439,7 +2874,141 @@ if (heroSlides.length > 1) {
                 Notiflix.Notify.failure('No se pudo compartir el código');
             }
         }
+
+        $(document).ready(function() {
+
+        $('#loc-comunidad-input').on('click', function() {
+                Notiflix.Notify.failure('Indica tu ubicación en el mapa');
+        });
+
+        });
     </script>
+
+    <!-- Modal Gestión de Ubicación -->
+    <div class="modal fade" id="modalGestionUbicacion" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Gestionar mis Ubicaciones</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                   
+                    <!-- Vista de Lista -->
+                    <div id="view-lista-ubicaciones">
+                         <p>
+                        <i class="bi bi-info-circle"></i>
+                        Actualiza tu ubicación para acceder al delivery gratis en las zonas indicadas.
+                    </p>
+                        <!-- Zonas con Envío Gratis -->
+                        <div class="alert alert-success border-0 rounded-4 mb-4">
+                            <small class="fw-bold d-block mb-1"><i class="bi bi-truck me-1"></i> ENVÍO GRATIS (Compras > $3)</small>
+                            <ul class="mb-0 small row row-cols-2 g-1">
+                                <li>JOSE ANTONIO PAEZ</li>
+                                <li>LA FLORIDA</li>
+                                <li>CHAPARRALITO</li>
+                                <li>EL POLIGONO</li>
+                                <li>URB EL CAICET</li>
+                                <li>URB AV DEL EJERCITO</li>
+                                <li>SIMON BOLIVAR</li>
+                                <li>CARINAGUITA</li>
+                                <li>JOSE MARIA VARGAS</li>
+                            </ul>
+                        </div>
+
+                        <!-- Lista de Ubicaciones Actuales -->
+                        <h6 class="fw-bold mb-3">Mis Ubicaciones</h6>
+                        <div id="lista-ubicaciones-user" class="list-group list-group-flush mb-4 rounded-4 border">
+                            <div class="p-3 text-center text-muted">Cargando ubicaciones...</div>
+                        </div>
+
+                        <div class="d-grid mb-4">
+                            <button class="btn btn-outline-success rounded-pill" onclick="mostrarFormNuevaUbicacion()">
+                                <i class="bi bi-plus-lg me-2"></i>Agregar Nueva Ubicación
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Vista de Formulario (Edición/Nueva) -->
+                    <div id="view-form-ubicacion" class="d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0" id="loc-form-title">Datos de Ubicación</h6>
+                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="regresarALista()">
+                                <i class="bi bi-arrow-left me-1"></i>Regresar
+                            </button>
+                        </div>
+                        
+                        <div id="notif-delivery-gratis" class="alert alert-success border-0 rounded-4 mb-3 d-none">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    ¡Excelente! Tienes <strong>Delivery Gratis</strong> en esta ubicación.
+                                </div>
+                                <button type="button" class="btn btn-success btn-sm rounded-pill px-3 fw-bold" onclick="guardarGestionUbicacion()">
+                                    Continuar <i class="bi bi-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <form id="loc-form">
+                            <input type="hidden" id="loc-id">
+                            <input type="hidden" id="loc-lat">
+                            <input type="hidden" id="loc-lng">
+                            <input type="hidden" id="loc-comunidad">
+                            <input type="hidden" id="loc-delivery-gratis">
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">NOMBRE RECEPTOR *</label>
+                                    <input type="text" class="form-control" id="loc-nombre" required placeholder="Quién recibe">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">TELÉFONO *</label>
+                                    <input type="number" class="form-control" id="loc-telefono" required placeholder="0414-XXXXXXX">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">COMUNIDAD / BARRIO *</label>
+                                <div class="search-container">
+                                    <input type="text" readonly placeholder="Indica tu ubicacion en el mapa" class="form-control" id="loc-comunidad-input" required placeholder="Selecciona una zona habitable" autocomplete="off">
+                                    <div id="loc-community-results" class="community-results"></div>
+                                </div>
+                            </div>
+
+                            <section id="solo_nuevo_registro">
+                                <div class="mb-3" id>
+                                <label class="form-label small fw-bold">DIRECCIÓN EXACTA *</label>
+                                <input type="text" class="form-control" id="loc-direccion" required placeholder="Calle, Carrera, Edificio/Casa">
+                            </div>
+                            <div class="mb-3" id>
+                                <label class="form-label small fw-bold">REFERENCIA</label>
+                                <input type="text" class="form-control" id="loc-referencia" placeholder="Gris con porton blanco, etc.">
+                            </div>
+
+                            </section>
+
+
+                            <label class="form-label small fw-bold text-success"><i class="bi bi-geo-alt-fill me-1"></i> MARCA TU CASA EN EL MAPA *</label>
+                            <div id="map-gestion" style="height: 300px; border-radius: 1rem; margin-bottom: 1rem; background: #eee;"></div>
+                            
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-success px-4 py-2 fw-bold" onclick="guardarGestionUbicacion()">
+                                    Guardar Ubicación
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        #map-gestion { width: 100%; border: 1px solid #ddd; position: relative; }
+        .list-group-item-action { cursor: pointer; transition: background 0.2s; }
+        .list-group-item-action:hover { background: #f8f9fa; }
+    </style>
 
     <!-- Chat Component (Simplified) -->
     <?php include 'assets/components/chat-button.php'; ?>
