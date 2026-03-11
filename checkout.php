@@ -15,7 +15,7 @@ require_once('core/_calculadrora_precios.php');
 $mensaje = '';
 $tipo_mensaje = '';
 $calculadora = new CalculadoraPrecios($pesoDolar, $peso_bolivar, $dolarBolivar, $bolivar_peso, $bcv, $data_monedas);
-$costo_envio_dolares = 2;
+$costo_envio_dolares = 0.9;
 $costo_envio_bs = $calculadora->convertirMonto($costo_envio_dolares, 'usd', 'v');
 $costo_envio_bs = $costo_envio_bs['bs'];
 
