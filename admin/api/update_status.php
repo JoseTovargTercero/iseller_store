@@ -102,7 +102,7 @@ try {
 
             $pid = $art['product_id'];
             $qty = (int)$art['quantity'];
-            $suc = 9;
+            $suc = $art['id_sucursal'];
 
             // lock de stock
             $stmtChk = $conexion->prepare("
@@ -245,7 +245,7 @@ try {
 
             $pid = $art['product_id'];
             $qty = (int)$art['quantity'];
-            $suc = 9;
+            $suc = $art['id_sucursal'];
 
             $stmtStock = $conexion->prepare("
                 UPDATE stock
