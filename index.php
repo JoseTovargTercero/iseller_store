@@ -1908,7 +1908,7 @@ if (heroSlides.length > 1) {
 
         /* Actualizar ubicacion */
         let mapUbicacion, markerUbicacion, geojsonLayer;
-        const freeDeliveryComs = ["JOSE ANTONIO PAEZ", "LA FLORIDA", "CHAPARRALITO", "EL POLIGONO", "URB EL CAICET", "URB AV DEL EJERCITO", "SIMON BOLIVAR", "CARINAGUITA", "JOSE MARIA VARGAS"];
+        const freeDeliveryComs = ["JOSE ANTONIO PAEZ", "LA FLORIDA", "CHAPARRALITO", "EL POLIGONO", "URB EL CAICET", "URB AV DEL EJERCITO", "SIMON BOLIVAR", "CARINAGUITA", "JOSE MARIA VARGAS", "LA PAILA", "LOS CAJONES DE SAN ENRIQUE", "SAN ENRIQUE CENTRO", "EL BOSQUE SAN ENRIQUE", "EL BAJO DE SAN ENRIQUE"];
 
         // --- CONFIGURACIÓN DE GEOCERCA ---
         const GEOFENCE_CENTER = [5.653802, -67.605304];
@@ -2913,6 +2913,11 @@ if (heroSlides.length > 1) {
                                 <li>SIMON BOLIVAR</li>
                                 <li>CARINAGUITA</li>
                                 <li>JOSE MARIA VARGAS</li>
+                                <li>LA PAILA</li>
+                                <li>LOS CAJONES DE SAN ENRIQUE</li>
+                                <li>SAN ENRIQUE CENTRO</li>
+                                <li>EL BOSQUE SAN ENRIQUE</li>
+                                <li>EL BAJO DE SAN ENRIQUE</li>
                             </ul>
                         </div>
 

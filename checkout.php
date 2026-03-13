@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("i", $user_id);
             $stmt->execute();
 
-            $freeDeliveryComs = ["JOSE ANTONIO PAEZ", "LA FLORIDA", "CHAPARRALITO", "EL POLIGONO", "URB EL CAICET", "URB AV DEL EJERCITO", "SIMON BOLIVAR", "CARINAGUITA", "JOSE MARIA VARGAS"];
+            $freeDeliveryComs = ["JOSE ANTONIO PAEZ", "LA FLORIDA", "CHAPARRALITO", "EL POLIGONO", "URB EL CAICET", "URB AV DEL EJERCITO", "SIMON BOLIVAR", "CARINAGUITA", "JOSE MARIA VARGAS", "LA PAILA", "LOS CAJONES DE SAN ENRIQUE", "SAN ENRIQUE CENTRO", "EL BOSQUE SAN ENRIQUE", "EL BAJO DE SAN ENRIQUE"];
 
             $delivery_gratis_confirmado = 0;
 
@@ -1512,7 +1512,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // --- CONFIGURACIÓN DE GEOCERCA ---
         const GEOFENCE_CENTER = [5.653802, -67.605304];
         const GEOFENCE_RADIUS = 6500; // 6.5 kilómetros en metros
-        const freeDeliveryComs = ["JOSE ANTONIO PAEZ", "LA FLORIDA", "CHAPARRALITO", "EL POLIGONO", "URB EL CAICET", "URB AV DEL EJERCITO", "SIMON BOLIVAR", "CARINAGUITA", "JOSE MARIA VARGAS"];
+        const freeDeliveryComs = ["JOSE ANTONIO PAEZ", "LA FLORIDA", "CHAPARRALITO", "EL POLIGONO", "URB EL CAICET", "URB AV DEL EJERCITO", "SIMON BOLIVAR", "CARINAGUITA", "JOSE MARIA VARGAS", "LA PAILA", "LOS CAJONES DE SAN ENRIQUE", "SAN ENRIQUE CENTRO", "EL BOSQUE SAN ENRIQUE", "EL BAJO DE SAN ENRIQUE"];
         let geofenceCircle = null;
 
         function initMap() {
