@@ -123,13 +123,18 @@ try {
                 throw new Exception("Stock insuficiente para producto $pid");
             }
 */
+            $stock_actual = (int)$resChk['stock']; // restale pero el minimo debe ser 0
+            $stock_nuevo = $stock_actual - $qty;
+            if ($stock_nuevo < 0) {
+                $stock_nuevo = 0;
+            }
             // descontar
             $stmtStock = $conexion->prepare("
                 UPDATE stock
-                SET stock = stock - ?
+                SET stock = ?
                 WHERE id_producto = ? AND id_sucursal = ?
             ");
-            $stmtStock->bind_param("iii", $qty, $pid, $suc);
+            $stmtStock->bind_param("iii", $stock_nuevo, $pid, $suc);
 
             if (!$stmtStock->execute()) {
                 throw new Exception('Error al descontar stock');
