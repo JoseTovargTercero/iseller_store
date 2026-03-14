@@ -125,8 +125,11 @@ $calculadora_socio = new CalculadoraPrecios($pesoDolar_socio, $peso_bolivar_soci
 
 $respuesta = [];
 $loreamny_productos = "(2203, 4584, 4789, 5330, 4362, 4796, 4798, 4660, 4102,"; // mayor
-$loreamny_productos .= "1658, 1654, 2874, 1628, 2872, 1659, 3803, 4097,  1684, 1627)"; // mayor
+$loreamny_productos .= "1654, 4097,  1684)"; // mayor
 //$loreamny_productos = "(1)";
+
+//1658, 1659, 2872, 1628, 1627, 2874,  3803
+
 if ($mode === 'search_index') {
     // Lightweight query for all products (for Fuse.js)
     $sql = "SELECT p.id, p.nombre, p.codigo_barras, p.precio_compra, p.cantidad_unidades, p.origen, s.stock, s.porcentaje, p.mayor, 
