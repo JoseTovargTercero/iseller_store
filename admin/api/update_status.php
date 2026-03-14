@@ -119,10 +119,10 @@ try {
                 throw new Exception("No existe stock para producto $pid");
             }
 
-            if ((int)$resChk['stock'] < $qty) {
+  /*          if ((int)$resChk['stock'] < $qty) {
                 throw new Exception("Stock insuficiente para producto $pid");
             }
-
+*/
             // descontar
             $stmtStock = $conexion->prepare("
                 UPDATE stock
