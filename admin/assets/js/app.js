@@ -370,13 +370,15 @@ window.tryChangeStatus = (id, newStatus) => {
 }
 
 window.changeStatus = async (id, newStatus) => {
-    try {
         const res = await fetch('api/update_status.php', {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, status: newStatus })
         });
-        const data = await res.json();
+        let data = await res.text();
+        console.log(data);
+        try {
+            data = JSON.parse(data);
         if (data.success) {
             showToast("Estado actualizado correctamente", "success");
             loadOrders();
@@ -386,6 +388,7 @@ window.changeStatus = async (id, newStatus) => {
         }
     } catch (e) {
         showToast("Error al actualizar el estado", "error");
+        console.error(e);
     }
 }
 
