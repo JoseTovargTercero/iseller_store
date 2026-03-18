@@ -389,7 +389,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Stock queries
             $stmtStock = $conexion->prepare("SELECT stock, id_stock, id_sucursal, bss_id FROM stock WHERE id_producto = ? AND id_sucursal = ? AND bss_id = ? LIMIT 1");
-            $stmtUpdStock = $conexion->prepare("UPDATE stock SET stock = ? WHERE id_producto = ? AND id_sucursal = ? AND bss_id = ?");
+         //   $stmtUpdStock = $conexion->prepare("UPDATE stock SET stock = ? WHERE id_producto = ? AND id_sucursal = ? AND bss_id = ?");
 
             foreach ($carrito as $item) {
                 // Insertar Item
@@ -441,13 +441,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($resStock->num_rows > 0) {
                     $rowStock = $resStock->fetch_assoc();
                     $newStock = max(0, $rowStock['stock'] - $qty);
-                    $stmtUpdStock->bind_param("iiii", $newStock, $item['id'], $stock_id_sucursal, $stock_bss_id);
-                    $stmtUpdStock->execute();
+                 //   $stmtUpdStock->bind_param("iiii", $newStock, $item['id'], $stock_id_sucursal, $stock_bss_id);
+                 //   $stmtUpdStock->execute();
                 }
             }
             $stmtItem->close();
             $stmtStock->close();
-            $stmtUpdStock->close();
+//$stmtUpdStock->close();
             
             $descuento_porcentaje = $puntosUsuario == '0.00' ? 0.50 : 0.90;
 
